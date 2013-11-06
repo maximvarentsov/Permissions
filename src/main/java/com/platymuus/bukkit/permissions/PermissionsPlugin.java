@@ -27,7 +27,6 @@ public class PermissionsPlugin extends JavaPlugin {
     private PlayerListener playerListener = new PlayerListener(this);
     private PermissionsCommand commandExecutor = new PermissionsCommand(this);
     private PermissionsTabComplete tabCompleter = new PermissionsTabComplete(this);
-    private PermissionsMetrics metrics = new PermissionsMetrics(this);
 
     private HashMap<String, PermissionAttachment> permissions = new HashMap<String, PermissionAttachment>();
     
@@ -52,14 +51,6 @@ public class PermissionsPlugin extends JavaPlugin {
         // Register everyone online right now
         for (Player p : getServer().getOnlinePlayers()) {
             registerPlayer(p);
-        }
-
-        // Metrics are fun!
-        try {
-            metrics.start();
-        }
-        catch (IOException ex) {
-            getLogger().warning("Failed to connect to plugin metrics: " + ex.getMessage());
         }
 
         // How are you gentlemen
@@ -169,7 +160,6 @@ public class PermissionsPlugin extends JavaPlugin {
      * @return A Group if it exists or null otherwise.
      */
     public Group getGroup(String groupName) {
-        metrics.apiUsed();
         if (getNode("groups") != null) {
             for (String key : getNode("groups").getKeys(false)) {
                 if (key.equalsIgnoreCase(groupName)) {
@@ -186,7 +176,6 @@ public class PermissionsPlugin extends JavaPlugin {
      * @return The groups this player is in. May be empty.
      */
     public List<Group> getGroups(String playerName) {
-        metrics.apiUsed();
         ArrayList<Group> result = new ArrayList<Group>();
         if (getNode("users/" + playerName) != null) {
             for (String key : getNode("users/" + playerName).getStringList("groups")) {
@@ -204,7 +193,6 @@ public class PermissionsPlugin extends JavaPlugin {
      * @return A PermissionsInfo about this player.
      */
     public PermissionInfo getPlayerInfo(String playerName) {
-        metrics.apiUsed();
         if (getNode("users/" + playerName) == null) {
             return null;
         } else {
@@ -217,7 +205,6 @@ public class PermissionsPlugin extends JavaPlugin {
      * @return The list of groups.
      */
     public List<Group> getAllGroups() {
-        metrics.apiUsed();
         ArrayList<Group> result = new ArrayList<Group>();
         if (getNode("groups") != null) {
             for (String key : getNode("groups").getKeys(false)) {
@@ -229,10 +216,6 @@ public class PermissionsPlugin extends JavaPlugin {
 
     // -- Plugin stuff
 
-    protected PermissionsMetrics getMetrics() {
-        return metrics;
-    }
-    
     protected void registerPlayer(Player player) {
         if (permissions.containsKey(player.getName())) {
             debug("Registering " + player.getName() + ": was already registered");
