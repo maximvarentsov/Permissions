@@ -1,6 +1,6 @@
 # basic info
 name: PermissionsBukkit
-main: com.platymuus.bukkit.permissions.PermissionsPlugin
+main: ru.gtncraft.permissions.PermissionsPlugin
 author: SpaceManiac
 website: http://dev.bukkit.org/server-mods/permbukkit/
 version: ${version}

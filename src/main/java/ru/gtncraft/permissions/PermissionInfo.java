@@ -1,8 +1,12 @@
-package com.platymuus.bukkit.permissions;
+package ru.gtncraft.permissions;
 
+import com.google.common.collect.ImmutableSet;
 import org.bukkit.configuration.ConfigurationSection;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A class representing the global and world nodes attached to a player or group.
@@ -24,7 +28,7 @@ public class PermissionInfo {
      * @return The list of groups.
      */
     public List<Group> getGroups() {
-        ArrayList<Group> result = new ArrayList<Group>();
+        List<Group> result = new ArrayList<>();
 
         for (String key : node.getStringList(groupType)) {
             Group group = plugin.getGroup(key);
@@ -32,7 +36,6 @@ public class PermissionInfo {
                 result.add(group);
             }
         }
-        
         return result;
     }
     
@@ -50,7 +53,7 @@ public class PermissionInfo {
      */
     public Set<String> getWorlds() {
         if (node.getConfigurationSection("worlds") == null) {
-            return new HashSet<String>();
+            return ImmutableSet.of();
         }
         return node.getConfigurationSection("worlds").getKeys(false);
     }
@@ -60,7 +63,7 @@ public class PermissionInfo {
      * @param world The name of the world.
      * @return The map of permissions.
      */
-    public Map<String, Boolean> getWorldPermissions(String world) {
+    public Map<String, Boolean> getWorldPermissions(final String world) {
         return plugin.getAllPerms(node.getName() + ":" + world, node.getName() + "/world/" + world);
     }
     

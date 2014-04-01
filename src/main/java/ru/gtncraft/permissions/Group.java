@@ -1,4 +1,4 @@
-package com.platymuus.bukkit.permissions;
+package ru.gtncraft.permissions;
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
@@ -15,7 +15,7 @@ public class Group {
     private PermissionsPlugin plugin;
     private String name;
 
-    protected Group(PermissionsPlugin plugin, String name) {
+    protected Group(final PermissionsPlugin plugin, final String name) {
         this.plugin = plugin;
         this.name = name;
     }
@@ -25,8 +25,9 @@ public class Group {
     }
 
     public List<String> getPlayers() {
-        ArrayList<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         if (plugin.getNode("users") != null) {
+
             for (String user : plugin.getNode("users").getKeys(false)) {
                 for (String group : plugin.getNode("users/" + user).getStringList("groups")) {
                     if (name.equalsIgnoreCase(group) && !result.contains(user)) {
@@ -39,7 +40,7 @@ public class Group {
     }
 
     public List<Player> getOnlinePlayers() {
-        ArrayList<Player> result = new ArrayList<Player>();
+        List<Player> result = new ArrayList<>();
         for (String user : getPlayers()) {
             Player player = Bukkit.getServer().getPlayerExact(user);
             if (player != null && player.isOnline()) {

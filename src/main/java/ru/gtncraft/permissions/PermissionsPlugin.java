@@ -1,4 +1,4 @@
-package com.platymuus.bukkit.permissions;
+package ru.gtncraft.permissions;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -24,18 +24,12 @@ import java.util.regex.Pattern;
  */
 public class PermissionsPlugin extends JavaPlugin {
 
-    private PlayerListener playerListener = new PlayerListener(this);
-    private PermissionsCommand commandExecutor = new PermissionsCommand(this);
-    private PermissionsTabComplete tabCompleter = new PermissionsTabComplete(this);
-
-    private HashMap<String, PermissionAttachment> permissions = new HashMap<String, PermissionAttachment>();
-    
+    private final Map<String, PermissionAttachment> permissions = new HashMap<>();
     private File configFile;
     private YamlConfiguration config;
 
     public boolean configLoadError = false;
 
-    // -- Basic stuff
     @Override
     public void onEnable() {
         // Take care of configuration
@@ -44,9 +38,8 @@ public class PermissionsPlugin extends JavaPlugin {
         reloadConfig();
 
         // Register stuff
-        getCommand("permissions").setExecutor(commandExecutor);
-        getCommand("permissions").setTabCompleter(tabCompleter);
-        getServer().getPluginManager().registerEvents(playerListener, this);
+        new Commands(this);
+        new Listeners(this);
 
         // Register everyone online right now
         for (Player p : getServer().getOnlinePlayers()) {
@@ -78,7 +71,7 @@ public class PermissionsPlugin extends JavaPlugin {
             configLoadError = true;
 
             // extract line numbers from the exception if we can
-            ArrayList<String> lines = new ArrayList<String>();
+            List<String> lines = new ArrayList<>();
             Pattern pattern = Pattern.compile("line (\\d+), column");
             Matcher matcher = pattern.matcher(ex.getMessage());
             while (matcher.find()) {
@@ -159,7 +152,7 @@ public class PermissionsPlugin extends JavaPlugin {
      * @param groupName The name of the group.
      * @return A Group if it exists or null otherwise.
      */
-    public Group getGroup(String groupName) {
+    public Group getGroup(final String groupName) {
         if (getNode("groups") != null) {
             for (String key : getNode("groups").getKeys(false)) {
                 if (key.equalsIgnoreCase(groupName)) {
@@ -175,8 +168,8 @@ public class PermissionsPlugin extends JavaPlugin {
      * @param playerName The name of the player.
      * @return The groups this player is in. May be empty.
      */
-    public List<Group> getGroups(String playerName) {
-        ArrayList<Group> result = new ArrayList<Group>();
+    public List<Group> getGroups(final String playerName) {
+        List<Group> result = new ArrayList<>();
         if (getNode("users/" + playerName) != null) {
             for (String key : getNode("users/" + playerName).getStringList("groups")) {
                 result.add(new Group(this, key));
@@ -192,7 +185,7 @@ public class PermissionsPlugin extends JavaPlugin {
      * @param playerName The name of the player.
      * @return A PermissionsInfo about this player.
      */
-    public PermissionInfo getPlayerInfo(String playerName) {
+    public PermissionInfo getPlayerInfo(final String playerName) {
         if (getNode("users/" + playerName) == null) {
             return null;
         } else {
@@ -205,7 +198,7 @@ public class PermissionsPlugin extends JavaPlugin {
      * @return The list of groups.
      */
     public List<Group> getAllGroups() {
-        ArrayList<Group> result = new ArrayList<Group>();
+        List<Group> result = new ArrayList<>();
         if (getNode("groups") != null) {
             for (String key : getNode("groups").getKeys(false)) {
                 result.add(new Group(this, key));
@@ -216,7 +209,7 @@ public class PermissionsPlugin extends JavaPlugin {
 
     // -- Plugin stuff
 
-    protected void registerPlayer(Player player) {
+    protected void registerPlayer(final Player player) {
         if (permissions.containsKey(player.getName())) {
             debug("Registering " + player.getName() + ": was already registered");
             unregisterPlayer(player);
@@ -226,12 +219,11 @@ public class PermissionsPlugin extends JavaPlugin {
         calculateAttachment(player);
     }
 
-    protected void unregisterPlayer(Player player) {
+    protected void unregisterPlayer(final Player player) {
         if (permissions.containsKey(player.getName())) {
             try {
                 player.removeAttachment(permissions.get(player.getName()));
-            }
-            catch (IllegalArgumentException ex) {
+            } catch (IllegalArgumentException ex) {
                 debug("Unregistering " + player.getName() + ": player did not have attachment");
             }
             permissions.remove(player.getName());
@@ -250,7 +242,7 @@ public class PermissionsPlugin extends JavaPlugin {
         }
     }
 
-    private void fillChildGroups(HashSet<String> childGroups, String group) {
+    private void fillChildGroups(Set<String> childGroups, String group) {
         if (childGroups.contains(group)) return;
         childGroups.add(group);
 
@@ -269,7 +261,7 @@ public class PermissionsPlugin extends JavaPlugin {
         // build the set of groups which are children of "group"
         // e.g. if Bob is only a member of "expert" which inherits "user", he
         // must be updated if the permissions of "user" change
-        HashSet<String> childGroups = new HashSet<String>();
+        HashSet<String> childGroups = new HashSet<>();
         fillChildGroups(childGroups, group);
         debug("Refreshing for group " + group + " (total " + childGroups.size() + " subgroups)");
 
@@ -289,9 +281,7 @@ public class PermissionsPlugin extends JavaPlugin {
 
     protected void refreshPermissions() {
         debug("Refreshing all permissions (for " + permissions.size() + " players)");
-        for (String player : permissions.keySet()) {
-            calculateAttachment(getServer().getPlayerExact(player));
-        }
+        permissions.keySet().stream().map(p -> getServer().getPlayerExact(p)).forEach(this::calculateAttachment);
     }
     
     protected ConfigurationSection getNode(String node) {
@@ -451,7 +441,7 @@ public class PermissionsPlugin extends JavaPlugin {
     }
 
     private Map<String, Boolean> calculateGroupPermissions(String group, String world) {
-        return calculateGroupPermissions0(new HashSet<String>(), group, world);
+        return calculateGroupPermissions0(new HashSet<>(), group, world);
     }
 
     private Map<String, Boolean> calculateGroupPermissions0(Set<String> recursionBuffer, String group, String world) {
@@ -459,11 +449,11 @@ public class PermissionsPlugin extends JavaPlugin {
 
         // if the group's not in the config, nothing
         if (getNode(groupNode) == null) {
-            return new LinkedHashMap<String, Boolean>();
+            return new LinkedHashMap<>();
         }
 
         recursionBuffer.add(group);
-        Map<String, Boolean> perms = new LinkedHashMap<String, Boolean>();
+        Map<String, Boolean> perms = new LinkedHashMap<>();
 
         // first apply any parent groups (see calculatePlayerPermissions for more)
         for (String parent : getNode(groupNode).getStringList("inheritance")) {

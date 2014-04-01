@@ -1,5 +1,6 @@
-package com.platymuus.bukkit.permissions;
+package ru.gtncraft.permissions;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -13,11 +14,12 @@ import org.bukkit.event.player.*;
 /**
  * Listen for player-based events to keep track of players and build permissions.
  */
-class PlayerListener implements Listener {
+class Listeners implements Listener {
 
-    private PermissionsPlugin plugin;
+    private final PermissionsPlugin plugin;
 
-    public PlayerListener(PermissionsPlugin plugin) {
+    public Listeners(final PermissionsPlugin plugin) {
+        Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
         this.plugin = plugin;
     }
     
@@ -25,7 +27,7 @@ class PlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     @SuppressWarnings("unused")
-    public void onWorldChange(PlayerChangedWorldEvent event) {
+    public void onWorldChange(final PlayerChangedWorldEvent event) {
         plugin.calculateAttachment(event.getPlayer());
     }
     
@@ -33,7 +35,7 @@ class PlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     @SuppressWarnings("unused")
-    public void onPlayerLogin(PlayerJoinEvent event) {
+    public void onPlayerLogin(final PlayerJoinEvent event) {
         plugin.debug("Player " + event.getPlayer().getName() + " joined, registering...");
         plugin.registerPlayer(event.getPlayer());
 
@@ -47,14 +49,14 @@ class PlayerListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     @SuppressWarnings("unused")
-    public void onPlayerKick(PlayerKickEvent event) {
+    public void onPlayerKick(final PlayerKickEvent event) {
         plugin.debug("Player " + event.getPlayer().getName() + " was kicked, unregistering...");
         plugin.unregisterPlayer(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     @SuppressWarnings("unused")
-    public void onPlayerQuit(PlayerQuitEvent event) {
+    public void onPlayerQuit(final PlayerQuitEvent event) {
         plugin.debug("Player " + event.getPlayer().getName() + " quit, unregistering...");
         plugin.unregisterPlayer(event.getPlayer());
     }
@@ -63,7 +65,7 @@ class PlayerListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     @SuppressWarnings("unused")
-    public void onPlayerInteract(PlayerInteractEvent event) {
+    public void onPlayerInteract(final PlayerInteractEvent event) {
         if (event.getAction() == Action.LEFT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_AIR) {
             return;
         }
@@ -75,7 +77,7 @@ class PlayerListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     @SuppressWarnings("unused")
-    public void onBlockPlace(BlockPlaceEvent event) {
+    public void onBlockPlace(final BlockPlaceEvent event) {
         if (!event.getPlayer().hasPermission("permissions.build")) {
             bother(event.getPlayer());
             event.setCancelled(true);
@@ -84,18 +86,17 @@ class PlayerListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     @SuppressWarnings("unused")
-    public void onBlockBreak(BlockBreakEvent event) {
+    public void onBlockBreak(final BlockBreakEvent event) {
         if (!event.getPlayer().hasPermission("permissions.build")) {
             bother(event.getPlayer());
             event.setCancelled(true);
         }
     }
     
-    private void bother(Player player) {
+    private void bother(final Player player) {
         if (plugin.getConfig().getString("messages/build", "").length() > 0) {
             String message = ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("messages/build", ""));
             player.sendMessage(message);
         }
     }
-
 }
