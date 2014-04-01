@@ -1,6 +1,6 @@
 package ru.gtncraft.permissions;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -42,13 +42,15 @@ public class PermissionManager {
      * @param playerName The name of the player.
      * @return The groups this player is in. May be empty.
      */
-    public List<Group> getGroups(final String playerName) {
-        if (getNode("users/" + playerName) != null) {
-            return getNode("users/" + playerName).getStringList("groups").stream().map(
-                    k -> new Group(plugin.getManager(), k)
-            ).collect(Collectors.toList());
+    public Set<Group> getGroups(final String playerName) {
+        ConfigurationSection node = getNode("users/" + playerName);
+        if (node == null) {
+            return ImmutableSet.of(new Group(plugin.getManager(), "default"));
         }
-        return ImmutableList.of(new Group(plugin.getManager(), "default"));
+        return node.getStringList("groups")
+                   .stream()
+                   .map(k -> new Group(plugin.getManager(), k))
+                   .collect(Collectors.toSet());
     }
 
     /**
@@ -68,14 +70,15 @@ public class PermissionManager {
      * Returns a list of all defined groups.
      * @return The list of groups.
      */
-    public List<Group> getAllGroups() {
-        List<Group> result = new ArrayList<>();
-        if (getNode("groups") != null) {
-            for (String key : getNode("groups").getKeys(false)) {
-                result.add(new Group(plugin.getManager(), key));
-            }
+    public Set<Group> getAllGroups() {
+        ConfigurationSection node = getNode("groups");
+        if (node == null) {
+            return ImmutableSet.of(new Group(plugin.getManager(), "default"));
         }
-        return result;
+        return node.getKeys(false)
+                   .stream()
+                   .map(name -> new Group(plugin.getManager(), name))
+                   .collect(Collectors.toSet());
     }
 
     protected void registerPlayer(final Player player) {
@@ -155,7 +158,7 @@ public class PermissionManager {
         return null;
     }
 
-    protected void createNode(String node) {
+    protected void createNode(final String node) {
         ConfigurationSection sec = plugin.getConfig();
         for (String piece : node.split("/")) {
             ConfigurationSection sec2 = getNode(sec == plugin.getConfig() ? piece : sec.getCurrentPath() + "/" + piece);
