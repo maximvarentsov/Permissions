@@ -10,8 +10,7 @@
 
     <repositories>
         <repository>
-            <id>bukkit</id>
-            <name>Bukkit Artifactory</name>
+            <id>bukkit-repo</id>
             <layout>default</layout>
             <url>http://repo.bukkit.org/content/groups/public</url>
         </repository>
@@ -21,22 +20,24 @@
         <dependency>
             <groupId>org.bukkit</groupId>
             <artifactId>bukkit</artifactId>
-            <version>1.7.2-R0.1-SNAPSHOT</version>
+            <version>1.7.5-R0.1-SNAPSHOT</version>
             <type>jar</type>
             <scope>compile</scope>
         </dependency>
     </dependencies>
 
     <build>
-        <finalName>PermissionsBukkit</finalName>
+        <finalName>${project.artifactId}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.0.2</version>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <showDeprecation>true</showDeprecation>
+                    <showWarnings>true</showWarnings>
                 </configuration>
             </plugin>
         </plugins>
