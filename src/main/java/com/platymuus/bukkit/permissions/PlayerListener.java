@@ -24,6 +24,7 @@ class PlayerListener implements Listener {
     // Keep track of player's world
 
     @EventHandler(priority = EventPriority.LOWEST)
+    @SuppressWarnings("unused")
     public void onWorldChange(PlayerChangedWorldEvent event) {
         plugin.calculateAttachment(event.getPlayer());
     }
@@ -31,6 +32,7 @@ class PlayerListener implements Listener {
     // Register players when needed
 
     @EventHandler(priority = EventPriority.LOWEST)
+    @SuppressWarnings("unused")
     public void onPlayerLogin(PlayerJoinEvent event) {
         plugin.debug("Player " + event.getPlayer().getName() + " joined, registering...");
         plugin.registerPlayer(event.getPlayer());
@@ -44,12 +46,14 @@ class PlayerListener implements Listener {
     // Unregister players when needed
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @SuppressWarnings("unused")
     public void onPlayerKick(PlayerKickEvent event) {
         plugin.debug("Player " + event.getPlayer().getName() + " was kicked, unregistering...");
         plugin.unregisterPlayer(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
+    @SuppressWarnings("unused")
     public void onPlayerQuit(PlayerQuitEvent event) {
         plugin.debug("Player " + event.getPlayer().getName() + " quit, unregistering...");
         plugin.unregisterPlayer(event.getPlayer());
@@ -58,6 +62,7 @@ class PlayerListener implements Listener {
     // Prevent doing things in the event of permissions.build: false
 
     @EventHandler(ignoreCancelled = true)
+    @SuppressWarnings("unused")
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (event.getAction() == Action.LEFT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_AIR) {
             return;
@@ -69,6 +74,7 @@ class PlayerListener implements Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
+    @SuppressWarnings("unused")
     public void onBlockPlace(BlockPlaceEvent event) {
         if (!event.getPlayer().hasPermission("permissions.build")) {
             bother(event.getPlayer());
@@ -77,6 +83,7 @@ class PlayerListener implements Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
+    @SuppressWarnings("unused")
     public void onBlockBreak(BlockBreakEvent event) {
         if (!event.getPlayer().hasPermission("permissions.build")) {
             bother(event.getPlayer());
