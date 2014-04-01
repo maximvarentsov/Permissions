@@ -3,22 +3,22 @@ package ru.gtncraft.permissions;
 import com.google.common.collect.ImmutableSet;
 import org.bukkit.configuration.ConfigurationSection;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A class representing the global and world nodes attached to a player or group.
  */
 public class PermissionInfo {
     
-    private final PermissionsPlugin plugin;
+    private final PermissionManager manager;
     private final ConfigurationSection node;
     private final String groupType;
     
-    protected PermissionInfo(PermissionsPlugin plugin, ConfigurationSection node, String groupType) {
-        this.plugin = plugin;
+    protected PermissionInfo(final PermissionManager manager, final ConfigurationSection node, final String groupType) {
+        this.manager = manager;
         this.node = node;
         this.groupType = groupType;
     }
@@ -28,15 +28,7 @@ public class PermissionInfo {
      * @return The list of groups.
      */
     public List<Group> getGroups() {
-        List<Group> result = new ArrayList<>();
-
-        for (String key : node.getStringList(groupType)) {
-            Group group = plugin.getGroup(key);
-            if (group != null) {
-                result.add(group);
-            }
-        }
-        return result;
+        return node.getStringList(groupType).stream().map(manager::getGroup).filter(v -> v != null).collect(Collectors.toList());
     }
     
     /**
@@ -44,7 +36,7 @@ public class PermissionInfo {
      * @return The map of permissions.
      */
     public Map<String, Boolean> getPermissions() {
-        return plugin.getAllPerms(node.getName(), node.getName());
+        return manager.getAllPerms(node.getName(), node.getName());
     }
     
     /**
@@ -64,7 +56,6 @@ public class PermissionInfo {
      * @return The map of permissions.
      */
     public Map<String, Boolean> getWorldPermissions(final String world) {
-        return plugin.getAllPerms(node.getName() + ":" + world, node.getName() + "/world/" + world);
+        return manager.getAllPerms(node.getName() + ":" + world, node.getName() + "/world/" + world);
     }
-    
 }

@@ -16,29 +16,23 @@ import org.bukkit.event.player.*;
  */
 class Listeners implements Listener {
 
-    private final PermissionsPlugin plugin;
+    private final Permissions plugin;
 
-    public Listeners(final PermissionsPlugin plugin) {
+    public Listeners(final Permissions plugin) {
         Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
         this.plugin = plugin;
     }
     
-    // Keep track of player's world
-
     @EventHandler(priority = EventPriority.LOWEST)
     @SuppressWarnings("unused")
     public void onWorldChange(final PlayerChangedWorldEvent event) {
-        plugin.calculateAttachment(event.getPlayer());
+        plugin.getManager().calculateAttachment(event.getPlayer());
     }
-    
-    // Register players when needed
 
     @EventHandler(priority = EventPriority.LOWEST)
     @SuppressWarnings("unused")
     public void onPlayerLogin(final PlayerJoinEvent event) {
-        plugin.debug("Player " + event.getPlayer().getName() + " joined, registering...");
-        plugin.registerPlayer(event.getPlayer());
-
+        plugin.getManager().registerPlayer(event.getPlayer());
         if (plugin.configLoadError && event.getPlayer().hasPermission("permissions.reload")) {
             plugin.configLoadError = false;
             event.getPlayer().sendMessage(ChatColor.RED + "[" + ChatColor.GREEN + "PermissionsBukkit" + ChatColor.RED + "] Your configuration is invalid, see the console for details.");
@@ -50,17 +44,15 @@ class Listeners implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     @SuppressWarnings("unused")
     public void onPlayerKick(final PlayerKickEvent event) {
-        plugin.debug("Player " + event.getPlayer().getName() + " was kicked, unregistering...");
-        plugin.unregisterPlayer(event.getPlayer());
+        plugin.getManager().unregisterPlayer(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     @SuppressWarnings("unused")
     public void onPlayerQuit(final PlayerQuitEvent event) {
-        plugin.debug("Player " + event.getPlayer().getName() + " quit, unregistering...");
-        plugin.unregisterPlayer(event.getPlayer());
+        plugin.getManager().unregisterPlayer(event.getPlayer());
     }
-    
+
     // Prevent doing things in the event of permissions.build: false
 
     @EventHandler(ignoreCancelled = true)
@@ -92,7 +84,7 @@ class Listeners implements Listener {
             event.setCancelled(true);
         }
     }
-    
+
     private void bother(final Player player) {
         if (plugin.getConfig().getString("messages/build", "").length() > 0) {
             String message = ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("messages/build", ""));

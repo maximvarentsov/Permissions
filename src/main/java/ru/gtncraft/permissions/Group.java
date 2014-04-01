@@ -4,19 +4,20 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * A class representing a permissions group.
  */
 public class Group {
 
-    private PermissionsPlugin plugin;
-    private String name;
+    private final PermissionManager manager;
+    private final String name;
 
-    protected Group(final PermissionsPlugin plugin, final String name) {
-        this.plugin = plugin;
+    protected Group(final PermissionManager manager, final String name) {
+        this.manager = manager;
         this.name = name;
     }
 
@@ -24,38 +25,33 @@ public class Group {
         return name;
     }
 
-    public List<String> getPlayers() {
-        List<String> result = new ArrayList<>();
-        if (plugin.getNode("users") != null) {
-
-            for (String user : plugin.getNode("users").getKeys(false)) {
-                for (String group : plugin.getNode("users/" + user).getStringList("groups")) {
-                    if (name.equalsIgnoreCase(group) && !result.contains(user)) {
-                        result.add(user);
-                    }
-                }
-            }
+    public Set<String> getPlayers() {
+        Set<String> result = new TreeSet<>();
+        if (manager.getNode("users") != null) {
+            manager.getNode("users")
+                   .getKeys(false)
+                   .forEach( user ->
+                manager.getNode("users/" + user)
+                       .getStringList("groups")
+                       .stream()
+                       .filter(name::equalsIgnoreCase)
+                       .map(group -> user)
+                       .forEach(result::add)
+            );
         }
         return result;
     }
 
-    public List<Player> getOnlinePlayers() {
-        List<Player> result = new ArrayList<>();
-        for (String user : getPlayers()) {
-            Player player = Bukkit.getServer().getPlayerExact(user);
-            if (player != null && player.isOnline()) {
-                result.add(player);
-            }
-        }
-        return result;
+    public Set<Player> getOnlinePlayers() {
+        return getPlayers().stream().map(user -> Bukkit.getServer().getPlayerExact(user)).collect(Collectors.toSet());
     }
 
     public PermissionInfo getInfo() {
-        ConfigurationSection node = plugin.getNode("groups/" + name);
-        if (node == null) {
-            return null;
+        ConfigurationSection node = manager.getNode("groups/" + name);
+        if (node != null) {
+            return new PermissionInfo(manager, node, "inheritance");
         }
-        return new PermissionInfo(plugin, node, "inheritance");
+        return null;
     }
 
     @Override
@@ -72,5 +68,4 @@ public class Group {
     public int hashCode() {
         return name.hashCode();
     }
-
 }

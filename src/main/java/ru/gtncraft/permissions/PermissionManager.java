@@ -1,149 +1,23 @@
 package ru.gtncraft.permissions;
 
+import com.google.common.collect.ImmutableList;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionAttachment;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.FileUtil;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-/**
- * Main class for PermissionsBukkit.
- */
-public class PermissionsPlugin extends JavaPlugin {
+public class PermissionManager {
 
-    private final Map<String, PermissionAttachment> permissions = new HashMap<>();
-    private File configFile;
-    private YamlConfiguration config;
+    private final Permissions plugin;
+    private final Map<String, PermissionAttachment> permissions;
 
-    public boolean configLoadError = false;
-
-    @Override
-    public void onEnable() {
-        // Take care of configuration
-        configFile = new File(getDataFolder(), "config.yml");
-        saveDefaultConfig();
-        reloadConfig();
-
-        // Register stuff
-        new Commands(this);
-        new Listeners(this);
-
-        // Register everyone online right now
-        for (Player p : getServer().getOnlinePlayers()) {
-            registerPlayer(p);
-        }
-
-        // How are you gentlemen
-        int count = getServer().getOnlinePlayers().length;
-        if (count > 0) {
-            getLogger().info("Enabled successfully, " + count + " online players registered");
-        } else {
-            // "0 players registered" sounds too much like an error
-            getLogger().info("Enabled successfully");
-        }
-    }
-
-    @Override
-    public FileConfiguration getConfig() {
-        return config;
-    }
-
-    @Override
-    public void reloadConfig() {
-        config = new YamlConfiguration();
-        config.options().pathSeparator('/');
-        try {
-            config.load(configFile);
-        } catch (InvalidConfigurationException ex) {
-            configLoadError = true;
-
-            // extract line numbers from the exception if we can
-            List<String> lines = new ArrayList<>();
-            Pattern pattern = Pattern.compile("line (\\d+), column");
-            Matcher matcher = pattern.matcher(ex.getMessage());
-            while (matcher.find()) {
-                String lineNo = matcher.group(1);
-                if (!lines.contains(lineNo)) {
-                    lines.add(lineNo);
-                }
-            }
-
-            // make a nice message
-            String msg = "Your configuration is invalid! ";
-            if (lines.size() == 0) {
-                msg += "Unable to find any line numbers.";
-            } else {
-                msg += "Take a look at line(s): " + lines.get(0);
-                for (String lineNo : lines.subList(1, lines.size())) {
-                    msg += ", " + lineNo;
-                }
-            }
-            getLogger().severe(msg);
-
-            // save the whole error to config_error.txt
-            try {
-                File outFile = new File(getDataFolder(), "config_error.txt");
-                PrintStream out = new PrintStream(new FileOutputStream(outFile));
-                out.println("Use the following website to help you find and fix configuration errors:");
-                out.println("https://yaml-online-parser.appspot.com/");
-                out.println();
-                out.println(ex.toString());
-                out.close();
-                getLogger().info("Saved the full error message to " + outFile);
-            } catch (IOException ex2) {
-                getLogger().severe("Failed to save the full error message!");
-            }
-
-            // save a backup
-            File backupFile = new File(getDataFolder(), "config_backup.yml");
-            File sourceFile = new File(getDataFolder(), "config.yml");
-            if (FileUtil.copy(sourceFile, backupFile)) {
-                getLogger().info("Saved a backup of your configuration to " + backupFile);
-            } else {
-                getLogger().severe("Failed to save a configuration backup!");
-            }
-        } catch (Exception ex) {
-            getLogger().log(Level.SEVERE, "Failed to load configuration", ex);
-        }
-    }
-
-    @Override
-    public void saveConfig() {
-        // If there's no keys (such as in the event of a load failure) don't save
-        if (config.getKeys(true).size() > 0) {
-            try {
-                config.save(configFile);
-            } catch (IOException ex) {
-                getLogger().log(Level.SEVERE, "Failed to save configuration", ex);
-            }
-        }
-    }
-
-    @Override
-    public void onDisable() {
-        // Unregister everyone
-        for (Player p : getServer().getOnlinePlayers()) {
-            unregisterPlayer(p);
-        }
-
-        // Good day to you! I said good day!
-        int count = getServer().getOnlinePlayers().length;
-        if (count > 0) {
-            getLogger().info("Disabled successfully, " + count + " online players unregistered");
-        }
+    public PermissionManager(final Permissions plugin) {
+        this.plugin = plugin;
+        this.permissions = new HashMap<>();
     }
 
     // -- External API
@@ -156,7 +30,7 @@ public class PermissionsPlugin extends JavaPlugin {
         if (getNode("groups") != null) {
             for (String key : getNode("groups").getKeys(false)) {
                 if (key.equalsIgnoreCase(groupName)) {
-                    return new Group(this, key);
+                    return new Group(plugin.getManager(), key);
                 }
             }
         }
@@ -169,15 +43,12 @@ public class PermissionsPlugin extends JavaPlugin {
      * @return The groups this player is in. May be empty.
      */
     public List<Group> getGroups(final String playerName) {
-        List<Group> result = new ArrayList<>();
         if (getNode("users/" + playerName) != null) {
-            for (String key : getNode("users/" + playerName).getStringList("groups")) {
-                result.add(new Group(this, key));
-            }
-        } else {
-            result.add(new Group(this, "default"));
+            return getNode("users/" + playerName).getStringList("groups").stream().map(
+                    k -> new Group(plugin.getManager(), k)
+            ).collect(Collectors.toList());
         }
-        return result;
+        return ImmutableList.of(new Group(plugin.getManager(), "default"));
     }
 
     /**
@@ -189,7 +60,7 @@ public class PermissionsPlugin extends JavaPlugin {
         if (getNode("users/" + playerName) == null) {
             return null;
         } else {
-            return new PermissionInfo(this, getNode("users/" + playerName), "groups");
+            return new PermissionInfo(plugin.getManager(), getNode("users/" + playerName), "groups");
         }
     }
 
@@ -201,20 +72,17 @@ public class PermissionsPlugin extends JavaPlugin {
         List<Group> result = new ArrayList<>();
         if (getNode("groups") != null) {
             for (String key : getNode("groups").getKeys(false)) {
-                result.add(new Group(this, key));
+                result.add(new Group(plugin.getManager(), key));
             }
         }
         return result;
     }
 
-    // -- Plugin stuff
-
     protected void registerPlayer(final Player player) {
         if (permissions.containsKey(player.getName())) {
-            debug("Registering " + player.getName() + ": was already registered");
             unregisterPlayer(player);
         }
-        PermissionAttachment attachment = player.addAttachment(this);
+        PermissionAttachment attachment = player.addAttachment(plugin);
         permissions.put(player.getName(), attachment);
         calculateAttachment(player);
     }
@@ -224,19 +92,15 @@ public class PermissionsPlugin extends JavaPlugin {
             try {
                 player.removeAttachment(permissions.get(player.getName()));
             } catch (IllegalArgumentException ex) {
-                debug("Unregistering " + player.getName() + ": player did not have attachment");
             }
             permissions.remove(player.getName());
-        } else {
-            debug("Unregistering " + player.getName() + ": was not registered");
         }
     }
 
     protected void refreshForPlayer(String player) {
-        saveConfig();
-        debug("Refreshing for player " + player);
+        plugin.saveConfig();
 
-        Player onlinePlayer = getServer().getPlayerExact(player);
+        Player onlinePlayer = Bukkit.getServer().getPlayerExact(player);
         if (onlinePlayer != null) {
             calculateAttachment(onlinePlayer);
         }
@@ -256,14 +120,13 @@ public class PermissionsPlugin extends JavaPlugin {
     }
 
     protected void refreshForGroup(String group) {
-        saveConfig();
+        plugin.saveConfig();
 
         // build the set of groups which are children of "group"
         // e.g. if Bob is only a member of "expert" which inherits "user", he
         // must be updated if the permissions of "user" change
         HashSet<String> childGroups = new HashSet<>();
         fillChildGroups(childGroups, group);
-        debug("Refreshing for group " + group + " (total " + childGroups.size() + " subgroups)");
 
         for (String player : permissions.keySet()) {
             ConfigurationSection node = getNode("users/" + player);
@@ -272,7 +135,7 @@ public class PermissionsPlugin extends JavaPlugin {
             List<String> groupList = (node != null) ? node.getStringList("groups") : Arrays.asList("default");
             for (String userGroup : groupList) {
                 if (childGroups.contains(userGroup)) {
-                    calculateAttachment(getServer().getPlayerExact(player));
+                    calculateAttachment(Bukkit.getServer().getPlayerExact(player));
                     break;
                 }
             }
@@ -280,23 +143,22 @@ public class PermissionsPlugin extends JavaPlugin {
     }
 
     protected void refreshPermissions() {
-        debug("Refreshing all permissions (for " + permissions.size() + " players)");
-        permissions.keySet().stream().map(p -> getServer().getPlayerExact(p)).forEach(this::calculateAttachment);
+        permissions.keySet().stream().map(p -> Bukkit.getServer().getPlayerExact(p)).forEach(this::calculateAttachment);
     }
-    
+
     protected ConfigurationSection getNode(String node) {
-        for (String entry : getConfig().getKeys(true)) {
-            if (node.equalsIgnoreCase(entry) && getConfig().isConfigurationSection(entry)) {
-                return getConfig().getConfigurationSection(entry);
+        for (String entry : plugin.getConfig().getKeys(true)) {
+            if (node.equalsIgnoreCase(entry) && plugin.getConfig().isConfigurationSection(entry)) {
+                return plugin.getConfig().getConfigurationSection(entry);
             }
         }
         return null;
     }
 
     protected void createNode(String node) {
-        ConfigurationSection sec = getConfig();
+        ConfigurationSection sec = plugin.getConfig();
         for (String piece : node.split("/")) {
-            ConfigurationSection sec2 = getNode(sec == getConfig() ? piece : sec.getCurrentPath() + "/" + piece);
+            ConfigurationSection sec2 = getNode(sec == plugin.getConfig() ? piece : sec.getCurrentPath() + "/" + piece);
             if (sec2 == null) {
                 sec2 = sec.createSection(piece);
             }
@@ -304,9 +166,9 @@ public class PermissionsPlugin extends JavaPlugin {
         }
     }
 
-    protected HashMap<String, Boolean> getAllPerms(String desc, String path) {
+    protected Map<String, Boolean> getAllPerms(String desc, String path) {
         ConfigurationSection node = getNode(path);
-        
+
         int failures = 0;
         String firstFailure = "";
 
@@ -326,11 +188,11 @@ public class PermissionsPlugin extends JavaPlugin {
             }
         }
         if (fixed) {
-            getLogger().info("Fixed broken nesting in " + desc + ".");
-            saveConfig();
+            plugin.getLogger().info("Fixed broken nesting in " + desc + ".");
+            plugin.saveConfig();
         }
 
-        LinkedHashMap<String, Boolean> result = new LinkedHashMap<String, Boolean>();
+        Map<String, Boolean> result = new LinkedHashMap<>();
         // Do the actual getting of permissions
         for (String key : node.getKeys(false)) {
             if (node.isBoolean(key)) {
@@ -342,21 +204,16 @@ public class PermissionsPlugin extends JavaPlugin {
                 }
             }
         }
-        
+
         if (failures == 1) {
-            getLogger().warning("In " + desc + ": " + firstFailure + " is non-boolean.");
+            plugin.getLogger().warning("In " + desc + ": " + firstFailure + " is non-boolean.");
         } else if (failures > 1) {
-            getLogger().warning("In " + desc + ": " + firstFailure + " is non-boolean (+" + (failures-1) + " more).");
+            plugin.getLogger().warning("In " + desc + ": " + firstFailure + " is non-boolean (+" + (failures-1) + " more).");
         }
-        
+
         return result;
     }
-    
-    protected void debug(String message) {
-        if (getConfig().getBoolean("debug", false)) {
-            getLogger().info("Debug: " + message);
-        }
-    }
+
 
     protected void calculateAttachment(Player player) {
         if (player == null) {
@@ -364,7 +221,6 @@ public class PermissionsPlugin extends JavaPlugin {
         }
         PermissionAttachment attachment = permissions.get(player.getName());
         if (attachment == null) {
-            debug("Calculating permissions on " + player.getName() + ": attachment was null");
             return;
         }
 
@@ -375,7 +231,6 @@ public class PermissionsPlugin extends JavaPlugin {
         Map<String, Boolean> dest = reflectMap(attachment);
         dest.clear();
         dest.putAll(values);
-        debug("Calculated permissions on " + player.getName() + ": " + dest.size() + " values");
 
         player.recalculatePermissions();
     }
@@ -419,7 +274,7 @@ public class PermissionsPlugin extends JavaPlugin {
             return calculateGroupPermissions("default", world);
         }
 
-        Map<String, Boolean> perms = new LinkedHashMap<String, Boolean>();
+        Map<String, Boolean> perms = new LinkedHashMap<>();
 
         // first, apply the player's groups (getStringList returns an empty list if not found)
         // later groups override earlier groups
@@ -458,7 +313,7 @@ public class PermissionsPlugin extends JavaPlugin {
         // first apply any parent groups (see calculatePlayerPermissions for more)
         for (String parent : getNode(groupNode).getStringList("inheritance")) {
             if (recursionBuffer.contains(parent)) {
-                getLogger().warning("In group " + group + ": recursive inheritance from " + parent);
+                plugin.getLogger().warning("In group " + group + ": recursive inheritance from " + parent);
                 continue;
             }
 
@@ -477,5 +332,4 @@ public class PermissionsPlugin extends JavaPlugin {
 
         return perms;
     }
-
 }

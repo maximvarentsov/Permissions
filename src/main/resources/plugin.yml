@@ -1,9 +1,6 @@
-# basic info
-name: PermissionsBukkit
-main: ru.gtncraft.permissions.PermissionsPlugin
-author: SpaceManiac
-website: http://dev.bukkit.org/server-mods/permbukkit/
-version: ${version}
+name: ${project.artifactId}
+main: ${project.groupId}.${project.artifactId}
+version: ${project.version}
 
 # commands
 commands:
@@ -105,5 +102,3 @@ permissions:
   permissions.player.unsetperm:
     description: Allows use of /permissions player unsetperm.
 
-# for PhonicUK, a cool guy who doesn't afraid of anything
-MCMAPluginID: D6AF3772-E6F6-4467-8F3A-1E9DB74C7E50

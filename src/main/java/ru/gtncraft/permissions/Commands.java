@@ -23,9 +23,9 @@ import java.util.stream.Collectors;
  */
 class Commands implements CommandExecutor, TabCompleter {
     
-    private final PermissionsPlugin plugin;
+    private final Permissions plugin;
 
-    public Commands(final PermissionsPlugin plugin) {
+    public Commands(final Permissions plugin) {
         plugin.getCommand("permissions").setExecutor(this);
         this.plugin = plugin;
     }
@@ -44,7 +44,7 @@ class Commands implements CommandExecutor, TabCompleter {
                     plugin.configLoadError = false;
                     sender.sendMessage(ChatColor.RED + "Your configuration is invalid, see the console for details.");
                 } else {
-                    plugin.refreshPermissions();
+                    plugin.getManager().refreshPermissions();
                     sender.sendMessage(ChatColor.GREEN + "Configuration reloaded.");
                 }
                 return true;
@@ -225,12 +225,12 @@ class Commands implements CommandExecutor, TabCompleter {
                     return true;
                 }
 
-                if (plugin.getNode("users/" + player) == null) {
+                if (plugin.getManager().getNode("users/" + player) == null) {
                     createPlayerNode(player);
                 }
 
-                plugin.getNode("users/" + player).set("groups", Arrays.asList(group));
-                plugin.refreshForPlayer(player);
+                plugin.getManager().getNode("users/" + player).set("groups", Arrays.asList(group));
+                plugin.getManager().refreshForPlayer(player);
 
                 sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.GREEN + " is now in " + ChatColor.WHITE + group + ChatColor.GREEN + ".");
                 return true;
@@ -260,7 +260,7 @@ class Commands implements CommandExecutor, TabCompleter {
                 if (split.length != 2) return usage(sender, command, "group list");
 
                 String result = "", sep = "";
-                for (String key : plugin.getNode("groups").getKeys(false)) {
+                for (String key : plugin.getManager().getNode("groups").getKeys(false)) {
                     result += sep + key;
                     sep = ", ";
                 }
@@ -272,15 +272,15 @@ class Commands implements CommandExecutor, TabCompleter {
                 if (split.length != 3) return usage(sender, command, "group players");
                 String group = split[2];
 
-                if (plugin.getNode("groups/" + group) == null) {
+                if (plugin.getManager().getNode("groups/" + group) == null) {
                     sender.sendMessage(ChatColor.RED + "No such group " + ChatColor.WHITE + group + ChatColor.RED + ".");
                     return true;
                 }
 
                 int count = 0;
                 String text = "", sep = "";
-                for (String user : plugin.getNode("users").getKeys(false)) {
-                    if (plugin.getNode("users/" + user).getStringList("groups").contains(group)) {
+                for (String user : plugin.getManager().getNode("users").getKeys(false)) {
+                    if (plugin.getManager().getNode("users/" + user).getStringList("groups").contains(group)) {
                         ++count;
                         text += sep + user;
                         sep = ", ";
@@ -297,7 +297,7 @@ class Commands implements CommandExecutor, TabCompleter {
                 boolean value = (split.length != 5) || Boolean.parseBoolean(split[4]);
 
                 String node = "permissions";
-                if (plugin.getNode("groups/" + group) == null) {
+                if (plugin.getManager().getNode("groups/" + group) == null) {
                     sender.sendMessage(ChatColor.RED + "No such group " + ChatColor.WHITE + group + ChatColor.RED + ".");
                     return true;
                 }
@@ -307,12 +307,12 @@ class Commands implements CommandExecutor, TabCompleter {
                     perm = perm.substring(perm.indexOf(':') + 1);
                     node = "worlds/" + world;
                 }
-                if (plugin.getNode("groups/" + group + "/" + node) == null) {
+                if (plugin.getManager().getNode("groups/" + group + "/" + node) == null) {
                     createGroupNode(group, node);
                 }
 
-                plugin.getNode("groups/" + group + "/" + node).set(perm, value);
-                plugin.refreshForGroup(group);
+                plugin.getManager().getNode("groups/" + group + "/" + node).set(perm, value);
+                plugin.getManager().refreshForGroup(group);
 
                 sender.sendMessage(ChatColor.GREEN + "Group " + ChatColor.WHITE + group + ChatColor.GREEN + " now has " + ChatColor.WHITE + perm + ChatColor.GREEN + " = " + ChatColor.WHITE + value + ChatColor.GREEN + ".");
                 return true;
@@ -324,7 +324,7 @@ class Commands implements CommandExecutor, TabCompleter {
                 String perm = split[3];
 
                 String node = "permissions";
-                if (plugin.getNode("groups/" + group) == null) {
+                if (plugin.getManager().getNode("groups/" + group) == null) {
                     sender.sendMessage(ChatColor.RED + "No such group " + ChatColor.WHITE + group + ChatColor.RED + ".");
                     return true;
                 }
@@ -334,17 +334,17 @@ class Commands implements CommandExecutor, TabCompleter {
                     perm = perm.substring(perm.indexOf(':') + 1);
                     node = "worlds/" + world;
                 }
-                if (plugin.getNode("groups/" + group + "/" + node) == null) {
+                if (plugin.getManager().getNode("groups/" + group + "/" + node) == null) {
                     createGroupNode(group, node);
                 }
 
-                ConfigurationSection sec = plugin.getNode("groups/" + group + "/" + node);
+                ConfigurationSection sec = plugin.getManager().getNode("groups/" + group + "/" + node);
                 if (!sec.contains(perm)) {
                     sender.sendMessage(ChatColor.GREEN + "Group " + ChatColor.WHITE + group + ChatColor.GREEN + " did not have " + ChatColor.WHITE + perm + ChatColor.GREEN + " set.");
                     return true;
                 }
                 sec.set(perm, null);
-                plugin.refreshForGroup(group);
+                plugin.getManager().refreshForGroup(group);
 
                 sender.sendMessage(ChatColor.GREEN + "Group " + ChatColor.WHITE + group + ChatColor.GREEN + " no longer has " + ChatColor.WHITE + perm + ChatColor.GREEN + " set.");
                 return true;
@@ -363,14 +363,14 @@ class Commands implements CommandExecutor, TabCompleter {
                 if (split.length != 3) return usage(sender, command, "player groups");
                 String player = split[2].toLowerCase();
 
-                if (plugin.getNode("users/" + player) == null) {
+                if (plugin.getManager().getNode("users/" + player) == null) {
                     sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.RED + " is in the default group.");
                     return true;
                 }
 
                 int count = 0;
                 String text = "", sep = "";
-                for (String group : plugin.getNode("users/" + player).getStringList("groups")) {
+                for (String group : plugin.getManager().getNode("users/" + player).getStringList("groups")) {
                     ++count;
                     text += sep + group;
                     sep = ", ";
@@ -384,12 +384,12 @@ class Commands implements CommandExecutor, TabCompleter {
                 String player = split[2].toLowerCase();
                 String[] groups = split[3].split(",");
 
-                if (plugin.getNode("users/" + player) == null) {
+                if (plugin.getManager().getNode("users/" + player) == null) {
                     createPlayerNode(player);
                 }
 
-                plugin.getNode("users/" + player).set("groups", Arrays.asList(groups));
-                plugin.refreshForPlayer(player);
+                plugin.getManager().getNode("users/" + player).set("groups", Arrays.asList(groups));
+                plugin.getManager().refreshForPlayer(player);
 
                 sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.GREEN + " is now in " + ChatColor.WHITE + split[3] + ChatColor.GREEN + ".");
                 return true;
@@ -400,19 +400,19 @@ class Commands implements CommandExecutor, TabCompleter {
                 String player = split[2].toLowerCase();
                 String group = split[3];
 
-                if (plugin.getNode("users/" + player) == null) {
+                if (plugin.getManager().getNode("users/" + player) == null) {
                     createPlayerNode(player);
                 }
 
-                List<String> list = plugin.getNode("users/" + player).getStringList("groups");
+                List<String> list = plugin.getManager().getNode("users/" + player).getStringList("groups");
                 if (list.contains(group)) {
                     sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.GREEN + " was already in " + ChatColor.WHITE + group + ChatColor.GREEN + ".");
                     return true;
                 }
                 list.add(group);
-                plugin.getNode("users/" + player).set("groups", list);
+                plugin.getManager().getNode("users/" + player).set("groups", list);
 
-                plugin.refreshForPlayer(player);
+                plugin.getManager().refreshForPlayer(player);
 
                 sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.GREEN + " is now in " + ChatColor.WHITE + group + ChatColor.GREEN + ".");
                 return true;
@@ -423,19 +423,19 @@ class Commands implements CommandExecutor, TabCompleter {
                 String player = split[2].toLowerCase();
                 String group = split[3];
 
-                if (plugin.getNode("users/" + player) == null) {
+                if (plugin.getManager().getNode("users/" + player) == null) {
                     createPlayerNode(player);
                 }
 
-                List<String> list = plugin.getNode("users/" + player).getStringList("groups");
+                List<String> list = plugin.getManager().getNode("users/" + player).getStringList("groups");
                 if (!list.contains(group)) {
                     sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.GREEN + " was not in " + ChatColor.WHITE + group + ChatColor.GREEN + ".");
                     return true;
                 }
                 list.remove(group);
-                plugin.getNode("users/" + player).set("groups", list);
+                plugin.getManager().getNode("users/" + player).set("groups", list);
 
-                plugin.refreshForPlayer(player);
+                plugin.getManager().refreshForPlayer(player);
 
                 sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.GREEN + " is no longer in " + ChatColor.WHITE + group + ChatColor.GREEN + ".");
                 return true;
@@ -448,7 +448,7 @@ class Commands implements CommandExecutor, TabCompleter {
                 boolean value = (split.length != 5) || Boolean.parseBoolean(split[4]);
 
                 String node = "permissions";
-                if (plugin.getNode("users/" + player) == null) {
+                if (plugin.getManager().getNode("users/" + player) == null) {
                     createPlayerNode(player);
                 }
 
@@ -457,12 +457,12 @@ class Commands implements CommandExecutor, TabCompleter {
                     perm = perm.substring(perm.indexOf(':') + 1);
                     node = "worlds/" + world;
                 }
-                if (plugin.getNode("users/" + player + "/" + node) == null) {
+                if (plugin.getManager().getNode("users/" + player + "/" + node) == null) {
                     createPlayerNode(player, node);
                 }
 
-                plugin.getNode("users/" + player + "/" + node).set(perm, value);
-                plugin.refreshForPlayer(player);
+                plugin.getManager().getNode("users/" + player + "/" + node).set(perm, value);
+                plugin.getManager().refreshForPlayer(player);
 
                 sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.GREEN + " now has " + ChatColor.WHITE + perm + ChatColor.GREEN + " = " + ChatColor.WHITE + value + ChatColor.GREEN + ".");
                 return true;
@@ -474,7 +474,7 @@ class Commands implements CommandExecutor, TabCompleter {
                 String perm = split[3];
 
                 String node = "permissions";
-                if (plugin.getNode("users/" + player) == null) {
+                if (plugin.getManager().getNode("users/" + player) == null) {
                     createPlayerNode(player);
                 }
 
@@ -483,17 +483,17 @@ class Commands implements CommandExecutor, TabCompleter {
                     perm = perm.substring(perm.indexOf(':') + 1);
                     node = "worlds/" + world;
                 }
-                if (plugin.getNode("users/" + player + "/" + node) == null) {
+                if (plugin.getManager().getNode("users/" + player + "/" + node) == null) {
                     createPlayerNode(player, node);
                 }
 
-                ConfigurationSection sec = plugin.getNode("users/" + player + "/" + node);
+                ConfigurationSection sec = plugin.getManager().getNode("users/" + player + "/" + node);
                 if (!sec.contains(perm)) {
                     sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.GREEN + " did not have " + ChatColor.WHITE + perm + ChatColor.GREEN + " set.");
                     return true;
                 }
                 sec.set(perm, null);
-                plugin.refreshForPlayer(player);
+                plugin.getManager().refreshForPlayer(player);
 
                 sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.GREEN + " no longer has " + ChatColor.WHITE + perm + ChatColor.GREEN + " set.");
                 return true;
@@ -504,16 +504,16 @@ class Commands implements CommandExecutor, TabCompleter {
     }
 
     private void createPlayerNode(String player) {
-        plugin.createNode("users/" + player);
-        plugin.getNode("users/" + player).set("groups", Arrays.asList("default"));
+        plugin.getManager().createNode("users/" + player);
+        plugin.getManager().getNode("users/" + player).set("groups", Arrays.asList("default"));
     }
 
     private void createPlayerNode(String player, String subnode) {
-        plugin.createNode("users/" + player + "/" + subnode);
+        plugin.getManager().createNode("users/" + player + "/" + subnode);
     }
 
     private void createGroupNode(String group, String subnode) {
-        plugin.createNode("groups/" + group + "/" + subnode);
+        plugin.getManager().createNode("groups/" + group + "/" + subnode);
     }
     
     // -- utilities --
@@ -579,25 +579,29 @@ class Commands implements CommandExecutor, TabCompleter {
         group unsetperm <group> <[world:]node> - unset a permission on a group.
          */
 
-        if (sub.equals("players")) {
-            if (args.length == 3) {
-                return partial(lastArg, allGroups());
-            }
-        } else if (sub.equals("setperm")) {
-            if (args.length == 3) {
-                return partial(lastArg, allGroups());
-            } else if (args.length == 4) {
-                return worldNodeComplete(lastArg);
-            } else if (args.length == 5) {
-                return partial(lastArg, BOOLEAN);
-            }
-        } else if (sub.equals("unsetperm")) {
-            if (args.length == 3) {
-                return partial(lastArg, allGroups());
-            } else if (args.length == 4) {
-                // TODO: maybe only show nodes that are already set?
-                return worldNodeComplete(lastArg);
-            }
+        switch (sub) {
+            case "players":
+                if (args.length == 3) {
+                    return partial(lastArg, allGroups());
+                }
+                break;
+            case "setperm":
+                if (args.length == 3) {
+                    return partial(lastArg, allGroups());
+                } else if (args.length == 4) {
+                    return worldNodeComplete(lastArg);
+                } else if (args.length == 5) {
+                    return partial(lastArg, BOOLEAN);
+                }
+                break;
+            case "unsetperm":
+                if (args.length == 3) {
+                    return partial(lastArg, allGroups());
+                } else if (args.length == 4) {
+                    // TODO: maybe only show nodes that are already set?
+                    return worldNodeComplete(lastArg);
+                }
+                break;
         }
 
         return ImmutableList.of();
@@ -615,49 +619,53 @@ class Commands implements CommandExecutor, TabCompleter {
         player unsetperm <player> <[world:]node> - unset a permission on a player.
          */
 
-        // A convenience in case I later want to replace online players with something else
-        List<String> players = null;
-
-        if (sub.equals("groups")) {
-            if (args.length == 3) {
-                return players;
-            }
-        } else if (sub.equals("setgroup")) {
-            if (args.length == 3) {
-                return players;
-            } else if (args.length == 4) {
-                // do some magic to complete after any commas
-                int idx = lastArg.lastIndexOf(',');
-                if (idx == -1) {
-                    return partial(lastArg, allGroups());
-                } else {
-                    String done = lastArg.substring(0, idx + 1); // includes the comma
-                    String toComplete = lastArg.substring(idx + 1);
-                    List<String> groups = partial(toComplete, allGroups());
-                    return groups.stream().map(group -> done + group).collect(Collectors.toList());
+        switch (sub) {
+            case "groups":
+                if (args.length == 3) {
+                    return null;
                 }
-            }
-        } else if (sub.equals("addgroup") || sub.equals("removegroup")) {
-            if (args.length == 3) {
-                return players;
-            } else if (args.length == 4) {
-                return partial(lastArg, allGroups());
-            }
-        } else if (sub.equals("setperm")) {
-            if (args.length == 3) {
-                return players;
-            } else if (args.length == 4) {
-                return worldNodeComplete(lastArg);
-            } else if (args.length == 5) {
-                return partial(lastArg, BOOLEAN);
-            }
-        } else if (sub.equals("unsetperm")) {
-            if (args.length == 3) {
-                return players;
-            } else if (args.length == 4) {
-                // TODO: maybe only show nodes that are already set?
-                return worldNodeComplete(lastArg);
-            }
+                break;
+            case "setgroup":
+                if (args.length == 3) {
+                    return null;
+                } else if (args.length == 4) {
+                    // do some magic to complete after any commas
+                    int idx = lastArg.lastIndexOf(',');
+                    if (idx == -1) {
+                        return partial(lastArg, allGroups());
+                    } else {
+                        String done = lastArg.substring(0, idx + 1); // includes the comma
+                        String toComplete = lastArg.substring(idx + 1);
+                        List<String> groups = partial(toComplete, allGroups());
+                        return groups.stream().map(group -> done + group).collect(Collectors.toList());
+                    }
+                }
+                break;
+            case "addgroup":
+            case "removegroup":
+                if (args.length == 3) {
+                    return null;
+                } else if (args.length == 4) {
+                    return partial(lastArg, allGroups());
+                }
+                break;
+            case "setperm":
+                if (args.length == 3) {
+                    return null;
+                } else if (args.length == 4) {
+                    return worldNodeComplete(lastArg);
+                } else if (args.length == 5) {
+                    return partial(lastArg, BOOLEAN);
+                }
+                break;
+            case "unsetperm":
+                if (args.length == 3) {
+                    return null;
+                } else if (args.length == 4) {
+                    // TODO: maybe only show nodes that are already set?
+                    return worldNodeComplete(lastArg);
+                }
+                break;
         }
 
         return ImmutableList.of();
@@ -708,18 +716,20 @@ class Commands implements CommandExecutor, TabCompleter {
             return partial(args[0], ROOT_SUBS);
         } else if (args.length == 2) {
             String sub = args[0];
-            if (sub.equals("check")) {
-                return partial(lastArg, allNodes());
-            } else if (sub.equals("info")) {
-                return partial(lastArg, allNodes());
-            } else if (sub.equals("dump")) {
-                return null;
-            } else if (sub.equals("rank") || sub.equals("setrank")) {
-                return null;
-            } else if (sub.equals("group")) {
-                return partial(lastArg, GROUP_SUBS);
-            } else if (sub.equals("player")) {
-                return partial(lastArg, PLAYER_SUBS);
+            switch (sub) {
+                case "check":
+                    return partial(lastArg, allNodes());
+                case "info":
+                    return partial(lastArg, allNodes());
+                case "dump":
+                    return null;
+                case "rank":
+                case "setrank":
+                    return null;
+                case "group":
+                    return partial(lastArg, GROUP_SUBS);
+                case "player":
+                    return partial(lastArg, PLAYER_SUBS);
             }
         } else {
             String sub = args[0];
