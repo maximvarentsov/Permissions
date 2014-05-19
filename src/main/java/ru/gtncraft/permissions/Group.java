@@ -13,8 +13,8 @@ import java.util.stream.Collectors;
  */
 public class Group {
 
-    private final PermissionManager manager;
-    private final String name;
+    final PermissionManager manager;
+    final String name;
 
     protected Group(final PermissionManager manager, final String name) {
         this.manager = manager;

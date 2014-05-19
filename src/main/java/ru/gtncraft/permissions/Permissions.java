@@ -20,9 +20,9 @@ import java.util.regex.Pattern;
 
 public class Permissions extends JavaPlugin {
 
-    private File configFile;
-    private YamlConfiguration config;
-    private PermissionManager manager;
+    File configFile;
+    YamlConfiguration config;
+    PermissionManager manager;
 
     public boolean configLoadError = false;
 
@@ -80,14 +80,12 @@ public class Permissions extends JavaPlugin {
             getLogger().severe(msg);
 
             // save the whole error to config_error.txt
-            try {
-                File outFile = new File(getDataFolder(), "config_error.txt");
-                PrintStream out = new PrintStream(new FileOutputStream(outFile));
+            File outFile = new File(getDataFolder(), "config_error.txt");
+            try (PrintStream out = new PrintStream(new FileOutputStream(outFile))) {
                 out.println("Use the following website to help you find and fix configuration errors:");
                 out.println("https://yaml-online-parser.appspot.com/");
                 out.println();
                 out.println(ex.toString());
-                out.close();
                 getLogger().info("Saved the full error message to " + outFile);
             } catch (IOException ex2) {
                 getLogger().severe("Failed to save the full error message!");

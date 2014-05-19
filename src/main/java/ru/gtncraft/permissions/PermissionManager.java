@@ -12,8 +12,8 @@ import java.util.stream.Collectors;
 
 public class PermissionManager {
 
-    private final Permissions plugin;
-    private final Map<String, PermissionAttachment> permissions;
+    final Permissions plugin;
+    final Map<String, PermissionAttachment> permissions;
 
     public PermissionManager(final Permissions plugin) {
         this.plugin = plugin;
@@ -94,7 +94,7 @@ public class PermissionManager {
         if (permissions.containsKey(player.getName())) {
             try {
                 player.removeAttachment(permissions.get(player.getName()));
-            } catch (IllegalArgumentException ex) {
+            } catch (IllegalArgumentException ignore) {
             }
             permissions.remove(player.getName());
         }
@@ -109,7 +109,7 @@ public class PermissionManager {
         }
     }
 
-    private void fillChildGroups(Set<String> childGroups, String group) {
+    void fillChildGroups(Set<String> childGroups, String group) {
         if (childGroups.contains(group)) return;
         childGroups.add(group);
 
@@ -238,12 +238,10 @@ public class PermissionManager {
         player.recalculatePermissions();
     }
 
-    // -- Private stuff
-
-    private Field pField;
+    Field pField;
 
     @SuppressWarnings("unchecked")
-    private Map<String, Boolean> reflectMap(PermissionAttachment attachment) {
+    Map<String, Boolean> reflectMap(PermissionAttachment attachment) {
         try {
             if (pField == null) {
                 pField = PermissionAttachment.class.getDeclaredField("permissions");
@@ -258,18 +256,18 @@ public class PermissionManager {
     // normally, LinkedHashMap.put (and thus putAll) will not reorder the list
     // if that key is already in the map, which we don't want - later puts should
     // always be bumped to the end of the list
-    private <K, V> void put(Map<K, V> dest, K key, V value) {
+    <K, V> void put(Map<K, V> dest, K key, V value) {
         dest.remove(key);
         dest.put(key, value);
     }
 
-    private <K, V> void putAll(Map<K, V> dest, Map<K, V> src) {
+    <K, V> void putAll(Map<K, V> dest, Map<K, V> src) {
         for (Map.Entry<K, V> entry : src.entrySet()) {
             put(dest, entry.getKey(), entry.getValue());
         }
     }
 
-    private Map<String, Boolean> calculatePlayerPermissions(String player, String world) {
+    Map<String, Boolean> calculatePlayerPermissions(String player, String world) {
         String playerNode = "users/" + player;
 
         // if the player isn't in the config, act like they're in default
@@ -298,11 +296,11 @@ public class PermissionManager {
         return perms;
     }
 
-    private Map<String, Boolean> calculateGroupPermissions(String group, String world) {
+    Map<String, Boolean> calculateGroupPermissions(String group, String world) {
         return calculateGroupPermissions0(new HashSet<>(), group, world);
     }
 
-    private Map<String, Boolean> calculateGroupPermissions0(Set<String> recursionBuffer, String group, String world) {
+    Map<String, Boolean> calculateGroupPermissions0(Set<String> recursionBuffer, String group, String world) {
         String groupNode = "groups/" + group;
 
         // if the group's not in the config, nothing

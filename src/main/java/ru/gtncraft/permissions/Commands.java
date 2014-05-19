@@ -8,7 +8,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionAttachmentInfo;
-import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.util.StringUtil;
 
 import java.io.File;
@@ -23,7 +22,7 @@ import java.util.stream.Collectors;
  */
 class Commands implements CommandExecutor, TabCompleter {
     
-    private final Permissions plugin;
+    final Permissions plugin;
 
     public Commands(final Permissions plugin) {
         plugin.getCommand("permissions").setExecutor(this);
@@ -47,20 +46,6 @@ class Commands implements CommandExecutor, TabCompleter {
                     plugin.getManager().refreshPermissions();
                     sender.sendMessage(ChatColor.GREEN + "Configuration reloaded.");
                 }
-                return true;
-            case "about":
-                if (!checkPerm(sender, "about")) return true;
-
-                // plugin information
-                PluginDescriptionFile desc = plugin.getDescription();
-                sender.sendMessage(ChatColor.GOLD + desc.getName() + ChatColor.GREEN + " version " + ChatColor.GOLD + desc.getVersion());
-                String auth = desc.getAuthors().get(0);
-                for (int i = 1; i < desc.getAuthors().size(); ++i) {
-                    auth += ChatColor.GREEN + ", " + ChatColor.WHITE + desc.getAuthors().get(i);
-                }
-                sender.sendMessage(ChatColor.GREEN + "By " + ChatColor.WHITE + auth);
-                sender.sendMessage(ChatColor.GREEN + "Website: " + ChatColor.WHITE + desc.getWebsite());
-
                 return true;
             case "check": {
                 if (!checkPerm(sender, "check")) return true;

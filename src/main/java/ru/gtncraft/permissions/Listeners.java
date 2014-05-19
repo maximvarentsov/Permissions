@@ -16,7 +16,7 @@ import org.bukkit.event.player.*;
  */
 class Listeners implements Listener {
 
-    private final Permissions plugin;
+    final Permissions plugin;
 
     public Listeners(final Permissions plugin) {
         Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
@@ -85,7 +85,7 @@ class Listeners implements Listener {
         }
     }
 
-    private void bother(final Player player) {
+    void bother(final Player player) {
         if (plugin.getConfig().getString("messages/build", "").length() > 0) {
             String message = ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("messages/build", ""));
             player.sendMessage(message);

@@ -12,9 +12,9 @@ import java.util.stream.Collectors;
  */
 public class PermissionInfo {
     
-    private final PermissionManager manager;
-    private final ConfigurationSection node;
-    private final String groupType;
+    final PermissionManager manager;
+    final ConfigurationSection node;
+    final String groupType;
     
     protected PermissionInfo(final PermissionManager manager, final ConfigurationSection node, final String groupType) {
         this.manager = manager;
