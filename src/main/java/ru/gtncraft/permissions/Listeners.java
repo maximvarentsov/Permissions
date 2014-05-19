@@ -34,7 +34,6 @@ class Listeners implements Listener {
     public void onPlayerLogin(final PlayerJoinEvent event) {
         plugin.getManager().registerPlayer(event.getPlayer());
         if (plugin.configLoadError && event.getPlayer().hasPermission("permissions.reload")) {
-            plugin.configLoadError = false;
             event.getPlayer().sendMessage(ChatColor.RED + "[" + ChatColor.GREEN + "PermissionsBukkit" + ChatColor.RED + "] Your configuration is invalid, see the console for details.");
         }
     }
