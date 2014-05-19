@@ -34,10 +34,12 @@ class Commands implements CommandExecutor, TabCompleter {
             return !checkPerm(sender, "help") || usage(sender, command);
         }
         
-        String subcommand = split[0];
-        switch (subcommand) {
+        String subCommand = split[0];
+        switch (subCommand) {
             case "reload":
-                if (!checkPerm(sender, "reload")) return true;
+                if (!checkPerm(sender, "reload")) {
+                    return true;
+                }
                 plugin.reloadConfig();
                 if (plugin.configLoadError) {
                     plugin.configLoadError = false;
@@ -48,8 +50,12 @@ class Commands implements CommandExecutor, TabCompleter {
                 }
                 return true;
             case "check": {
-                if (!checkPerm(sender, "check")) return true;
-                if (split.length != 2 && split.length != 3) return usage(sender, command, subcommand);
+                if (!checkPerm(sender, "check")) {
+                    return true;
+                }
+                if (split.length != 2 && split.length != 3) {
+                    return usage(sender, command, subCommand);
+                }
 
                 String node = split[1];
                 Permissible permissible;
@@ -72,8 +78,12 @@ class Commands implements CommandExecutor, TabCompleter {
                 return true;
             }
             case "info": {
-                if (!checkPerm(sender, "info")) return true;
-                if (split.length != 2) return usage(sender, command, subcommand);
+                if (!checkPerm(sender, "info")) {
+                    return true;
+                }
+                if (split.length != 2) {
+                    return usage(sender, command, subCommand);
+                }
 
                 String node = split[1];
                 Permission perm = plugin.getServer().getPluginManager().getPermission(node);
@@ -103,8 +113,12 @@ class Commands implements CommandExecutor, TabCompleter {
                 return true;
             }
             case "dump": {
-                if (!checkPerm(sender, "dump")) return true;
-                if (split.length < 1 || split.length > 3) return usage(sender, command, subcommand);
+                if (!checkPerm(sender, "dump")) {
+                    return true;
+                }
+                if (split.length < 1 || split.length > 3) {
+                    return usage(sender, command, subCommand);
+                }
 
                 int page;
                 Permissible permissible;
@@ -147,29 +161,24 @@ class Commands implements CommandExecutor, TabCompleter {
                 if (page == -1) {
                     // Dump to file
                     File file = new File(plugin.getDataFolder(), "dump.txt");
-                    try {
-                        FileOutputStream fos = new FileOutputStream(file);
-                        PrintStream out = new PrintStream(fos);
-                        // right now permissible is always a CommandSender
-                        out.println("PermissionsBukkit dump for: " + ((CommandSender) permissible).getName());
-                        out.println(new Date().toString());
-
-                        for (PermissionAttachmentInfo info : dump) {
-                            if (info.getAttachment() == null) {
-                                out.println(info.getPermission() + "=" + info.getValue() + " (default)");
-                            } else {
-                                out.println(info.getPermission() + "=" + info.getValue() + " (" + info.getAttachment().getPlugin().getDescription().getName() + ")");
+                    try (FileOutputStream fos = new FileOutputStream(file)) {
+                        try (PrintStream out = new PrintStream(fos)) {
+                            // right now permissible is always a CommandSender
+                            out.println("Permissions dump for: " + ((CommandSender) permissible).getName());
+                            out.println(new Date().toString());
+                            for (PermissionAttachmentInfo info : dump) {
+                                if (info.getAttachment() == null) {
+                                    out.println(info.getPermission() + "=" + info.getValue() + " (default)");
+                                } else {
+                                    out.println(info.getPermission() + "=" + info.getValue() + " (" + info.getAttachment().getPlugin().getDescription().getName() + ")");
+                                }
                             }
                         }
-
-                        out.close();
-                        fos.close();
-
                         sender.sendMessage(ChatColor.GREEN + "Permissions dump written to " + ChatColor.WHITE + file);
-                    } catch (IOException e) {
+                    } catch (IOException ex) {
                         sender.sendMessage(ChatColor.RED + "Failed to write to dump.txt, see the console for more details");
-                        sender.sendMessage(ChatColor.RED + e.toString());
-                        e.printStackTrace();
+                        sender.sendMessage(ChatColor.RED + ex.toString());
+                        ex.printStackTrace();
                     }
                     return true;
                 }
@@ -199,7 +208,7 @@ class Commands implements CommandExecutor, TabCompleter {
             case "rank":
             case "setrank":
                 if (!checkPerm(sender, "setrank")) return true;
-                if (split.length != 3) return usage(sender, command, subcommand);
+                if (split.length != 3) return usage(sender, command, subCommand);
 
                 // This is essentially player setgroup with an added check
                 String player = split[1].toLowerCase();
@@ -221,13 +230,13 @@ class Commands implements CommandExecutor, TabCompleter {
                 return true;
             case "group":
                 if (split.length < 2) {
-                    return !checkPerm(sender, "group.help") || usage(sender, command, subcommand);
+                    return !checkPerm(sender, "group.help") || usage(sender, command, subCommand);
                 }
                 groupCommand(sender, command, split);
                 return true;
             case "player":
                 if (split.length < 2) {
-                    return !checkPerm(sender, "player.help") || usage(sender, command, subcommand);
+                    return !checkPerm(sender, "player.help") || usage(sender, command, subCommand);
                 }
                 playerCommand(sender, command, split);
                 return true;
@@ -236,13 +245,17 @@ class Commands implements CommandExecutor, TabCompleter {
         }
     }
 
-    private boolean groupCommand(CommandSender sender, Command command, String[] split) {
+    boolean groupCommand(CommandSender sender, Command command, String[] split) {
         String subcommand = split[1];
 
         switch (subcommand) {
             case "list": {
-                if (!checkPerm(sender, "group.list")) return true;
-                if (split.length != 2) return usage(sender, command, "group list");
+                if (!checkPerm(sender, "group.list")) {
+                    return true;
+                }
+                if (split.length != 2) {
+                    return usage(sender, command, "group list");
+                }
 
                 String result = "", sep = "";
                 for (String key : plugin.getManager().getNode("groups").getKeys(false)) {
@@ -253,8 +266,12 @@ class Commands implements CommandExecutor, TabCompleter {
                 return true;
             }
             case "players": {
-                if (!checkPerm(sender, "group.players")) return true;
-                if (split.length != 3) return usage(sender, command, "group players");
+                if (!checkPerm(sender, "group.players")) {
+                    return true;
+                }
+                if (split.length != 3) {
+                    return usage(sender, command, "group players");
+                }
                 String group = split[2];
 
                 if (plugin.getManager().getNode("groups/" + group) == null) {
@@ -275,8 +292,12 @@ class Commands implements CommandExecutor, TabCompleter {
                 return true;
             }
             case "setperm": {
-                if (!checkPerm(sender, "group.setperm")) return true;
-                if (split.length != 4 && split.length != 5) return usage(sender, command, "group setperm");
+                if (!checkPerm(sender, "group.setperm")) {
+                    return true;
+                }
+                if (split.length != 4 && split.length != 5) {
+                    return usage(sender, command, "group setperm");
+                }
                 String group = split[2];
                 String perm = split[3];
                 boolean value = (split.length != 5) || Boolean.parseBoolean(split[4]);
@@ -303,8 +324,12 @@ class Commands implements CommandExecutor, TabCompleter {
                 return true;
             }
             case "unsetperm": {
-                if (!checkPerm(sender, "group.unsetperm")) return true;
-                if (split.length != 4) return usage(sender, command, "group unsetperm");
+                if (!checkPerm(sender, "group.unsetperm")) {
+                    return true;
+                }
+                if (split.length != 4) {
+                    return usage(sender, command, "group unsetperm");
+                }
                 String group = split[2].toLowerCase();
                 String perm = split[3];
 
@@ -339,7 +364,7 @@ class Commands implements CommandExecutor, TabCompleter {
         }
     }
 
-    private boolean playerCommand(CommandSender sender, Command command, String[] split) {
+    boolean playerCommand(CommandSender sender, Command command, String[] split) {
         String subcommand = split[1];
 
         switch (subcommand) {
@@ -364,8 +389,12 @@ class Commands implements CommandExecutor, TabCompleter {
                 return true;
             }
             case "setgroup": {
-                if (!checkPerm(sender, "player.setgroup")) return true;
-                if (split.length != 4) return usage(sender, command, "player setgroup");
+                if (!checkPerm(sender, "player.setgroup")) {
+                    return true;
+                }
+                if (split.length != 4) {
+                    return usage(sender, command, "player setgroup");
+                }
                 String player = split[2].toLowerCase();
                 String[] groups = split[3].split(",");
 
@@ -488,22 +517,22 @@ class Commands implements CommandExecutor, TabCompleter {
         }
     }
 
-    private void createPlayerNode(String player) {
+    void createPlayerNode(String player) {
         plugin.getManager().createNode("users/" + player);
         plugin.getManager().getNode("users/" + player).set("groups", Arrays.asList("default"));
     }
 
-    private void createPlayerNode(String player, String subnode) {
+    void createPlayerNode(String player, String subnode) {
         plugin.getManager().createNode("users/" + player + "/" + subnode);
     }
 
-    private void createGroupNode(String group, String subnode) {
+    void createGroupNode(String group, String subnode) {
         plugin.getManager().createNode("groups/" + group + "/" + subnode);
     }
     
     // -- utilities --
     
-    private boolean checkPerm(CommandSender sender, String subnode) {
+    boolean checkPerm(CommandSender sender, String subnode) {
         boolean ok = sender.hasPermission("permissions." + subnode);
         if (!ok) {
             sender.sendMessage(ChatColor.RED + "You do not have permissions to do that.");
@@ -511,7 +540,7 @@ class Commands implements CommandExecutor, TabCompleter {
         return ok;
     }
     
-    private boolean usage(CommandSender sender, Command command) {
+    boolean usage(CommandSender sender, Command command) {
         sender.sendMessage(ChatColor.RED + "[====" + ChatColor.GREEN + " /permissons " + ChatColor.RED + "====]");
         for (String line : command.getUsage().split("\\n")) {
             if ((line.startsWith("/<command> group") && !line.startsWith("/<command> group -")) ||
@@ -523,7 +552,7 @@ class Commands implements CommandExecutor, TabCompleter {
         return true;
     }
     
-    private boolean usage(CommandSender sender, Command command, String subcommand) {
+    boolean usage(CommandSender sender, Command command, String subcommand) {
         sender.sendMessage(ChatColor.RED + "[====" + ChatColor.GREEN + " /permissons " + subcommand + " " + ChatColor.RED + "====]");
         for (String line : command.getUsage().split("\\n")) {
             if (line.startsWith("/<command> " + subcommand)) {
@@ -533,7 +562,7 @@ class Commands implements CommandExecutor, TabCompleter {
         return true;
     }
     
-    private String formatLine(String line) {
+     String formatLine(String line) {
         int i = line.indexOf(" - ");
         String usage = line.substring(0, i);
         String desc = line.substring(i + 3);
@@ -546,15 +575,15 @@ class Commands implements CommandExecutor, TabCompleter {
         return ChatColor.GREEN + usage + " - " + ChatColor.WHITE + desc;
     }
 
-    private final List<String> BOOLEAN = ImmutableList.of("true", "false");
-    private final List<String> ROOT_SUBS = ImmutableList.of("reload", "about", "check", "info", "dump", "rank", "setrank", "group", "player");
-    private final List<String> GROUP_SUBS = ImmutableList.of("list", "players", "setperm", "unsetperm");
-    private final List<String> PLAYER_SUBS = ImmutableList.of("setgroup", "addgroup", "removegroup", "setperm", "unsetperm");
+    final List<String> BOOLEAN = ImmutableList.of("true", "false");
+    final List<String> ROOT_SUBS = ImmutableList.of("reload", "about", "check", "info", "dump", "rank", "setrank", "group", "player");
+    final List<String> GROUP_SUBS = ImmutableList.of("list", "players", "setperm", "unsetperm");
+    final List<String> PLAYER_SUBS = ImmutableList.of("setgroup", "addgroup", "removegroup", "setperm", "unsetperm");
 
-    private final Set<Permission> permSet = new HashSet<>();
-    private final List<String> permList = new ArrayList<>();
+    final Set<Permission> permSet = new HashSet<>();
+    final List<String> permList = new ArrayList<>();
 
-    private List<String> groupComplete(CommandSender sender, String[] args) {
+    List<String> groupComplete(CommandSender sender, String[] args) {
         String sub = args[1];
         String lastArg = args[args.length - 1];
         /*
@@ -592,7 +621,7 @@ class Commands implements CommandExecutor, TabCompleter {
         return ImmutableList.of();
     }
 
-    private List<String> playerComplete(CommandSender sender, String[] args) {
+    List<String> playerComplete(CommandSender sender, String[] args) {
         String sub = args[1];
         String lastArg = args[args.length - 1];
         /*
@@ -656,11 +685,11 @@ class Commands implements CommandExecutor, TabCompleter {
         return ImmutableList.of();
     }
 
-    private Collection<String> allGroups() {
+    Collection<String> allGroups() {
         return plugin.getConfig().getConfigurationSection("groups").getKeys(false);
     }
 
-    private Collection<String> allNodes() {
+    Collection<String> allNodes() {
         Set<Permission> newPermSet = plugin.getServer().getPluginManager().getPermissions();
         if (!permSet.equals(newPermSet)) {
             permSet.clear();
@@ -673,12 +702,12 @@ class Commands implements CommandExecutor, TabCompleter {
         return permList;
     }
 
-    private List<String> worldNodeComplete(String token) {
+    List<String> worldNodeComplete(String token) {
         // TODO: complete [world:]node
         return partial(token, allNodes());
     }
 
-    private List<String> partial(String token, Collection<String> from) {
+    List<String> partial(String token, Collection<String> from) {
         return StringUtil.copyPartialMatches(token, from, new ArrayList<>(from.size()));
     }
 
