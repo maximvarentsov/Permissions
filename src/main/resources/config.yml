@@ -1,5 +1,3 @@
-# PermissionsBukkit configuration file
-# 
 # A permission node is a string like 'permissions.build', usually starting
 # with the name of the plugin. Refer to a plugin's documentation for what
 # permissions it cares about. Each node should be followed by true to grant

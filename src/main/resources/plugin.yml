@@ -28,7 +28,7 @@ commands:
 permissions:
   permissions.*:
     default: op
-    description: Allows use of all PermissionsBukkit administration commands.
+    description: Allows use of all Permissions administration commands.
     children:
       permissions.help: true
       permissions.reload: true
@@ -38,9 +38,6 @@ permissions:
       permissions.setrank: true
       permissions.group.*: true
       permissions.player.*: true
-  permissions.build:
-    description: Allows player to build.
-    default: true
   permissions.help:
     description: Allows viewing of usage for /permissions.
   permissions.reload:
