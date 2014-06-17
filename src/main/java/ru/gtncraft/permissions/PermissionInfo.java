@@ -3,6 +3,7 @@ package ru.gtncraft.permissions;
 import com.google.common.collect.ImmutableSet;
 import org.bukkit.configuration.ConfigurationSection;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -26,12 +27,12 @@ public class PermissionInfo {
      * Gets the list of groups this group/player inherits permissions from.
      * @return The list of groups.
      */
-    public Set<Group> getGroups() {
+    public List<Group> getGroups() {
         return node.getStringList(groupType)
                    .stream()
                    .map(manager::getGroup)
                    .filter(v -> v != null)
-                   .collect(Collectors.toSet());
+                   .collect(Collectors.toList());
     }
     
     /**

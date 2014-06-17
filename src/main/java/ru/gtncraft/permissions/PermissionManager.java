@@ -1,6 +1,6 @@
 package ru.gtncraft.permissions;
 
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableList;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -23,7 +23,7 @@ public class PermissionManager {
     // -- External API
     /**
      * Get the group with the given name.
-     * @param groupName The name of the group.
+     * @param groupName The name of the group.                                       Set
      * @return A Group if it exists or null otherwise.
      */
     public Group getGroup(final String groupName) {
@@ -42,15 +42,15 @@ public class PermissionManager {
      * @param playerName The name of the player.
      * @return The groups this player is in. May be empty.
      */
-    public Set<Group> getGroups(final String playerName) {
+    public Collection<Group> getGroups(final String playerName) {
         ConfigurationSection node = getNode("users/" + playerName);
         if (node == null) {
-            return ImmutableSet.of(new Group(plugin.getManager(), "default"));
+            return ImmutableList.of(new Group(plugin.getManager(), "default"));
         }
         return node.getStringList("groups")
                    .stream()
                    .map(k -> new Group(plugin.getManager(), k))
-                   .collect(Collectors.toSet());
+                   .collect(Collectors.toList());
     }
 
     /**
@@ -70,15 +70,15 @@ public class PermissionManager {
      * Returns a list of all defined groups.
      * @return The list of groups.
      */
-    public Set<Group> getAllGroups() {
+    public Collection<Group> getAllGroups() {
         ConfigurationSection node = getNode("groups");
         if (node == null) {
-            return ImmutableSet.of(new Group(plugin.getManager(), "default"));
+            return ImmutableList.of(new Group(plugin.getManager(), "default"));
         }
         return node.getKeys(false)
                    .stream()
                    .map(name -> new Group(plugin.getManager(), name))
-                   .collect(Collectors.toSet());
+                   .collect(Collectors.toList());
     }
 
     protected void registerPlayer(final Player player) {
