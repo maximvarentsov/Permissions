@@ -13,7 +13,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 /**
  * Listen for player-based events to keep track of players and build permissions.
  */
-class Listeners implements Listener {
+final class Listeners implements Listener {
 
     final Permissions plugin;
 
@@ -33,7 +33,7 @@ class Listeners implements Listener {
     public void onPlayerLogin(final PlayerJoinEvent event) {
         plugin.getManager().registerPlayer(event.getPlayer());
         if (plugin.configLoadError && event.getPlayer().hasPermission("permissions.reload")) {
-            event.getPlayer().sendMessage(ChatColor.RED + "[" + ChatColor.GREEN + "PermissionsBukkit" + ChatColor.RED + "] Your configuration is invalid, see the console for details.");
+            event.getPlayer().sendMessage(ChatColor.RED + "[" + ChatColor.GREEN + "Permissions" + ChatColor.RED + "] Your configuration is invalid, see the console for details.");
         }
     }
 

@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>ru.gtncraft.permissions</groupId>
     <artifactId>Permissions</artifactId>
-    <version>0.1</version>
+    <version>0.2</version>
 
     <repositories>
         <repository>

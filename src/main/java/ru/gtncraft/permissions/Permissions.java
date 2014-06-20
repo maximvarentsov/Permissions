@@ -18,7 +18,7 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Permissions extends JavaPlugin {
+final public class Permissions extends JavaPlugin {
 
     File configFile;
     YamlConfiguration config;

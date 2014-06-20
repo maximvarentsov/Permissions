@@ -11,13 +11,13 @@ import java.util.stream.Collectors;
 /**
  * A class representing the global and world nodes attached to a player or group.
  */
-public class PermissionInfo {
+public final class PermissionInfo {
     
     final PermissionManager manager;
     final ConfigurationSection node;
     final String groupType;
     
-    protected PermissionInfo(final PermissionManager manager, final ConfigurationSection node, final String groupType) {
+    PermissionInfo(final PermissionManager manager, final ConfigurationSection node, final String groupType) {
         this.manager = manager;
         this.node = node;
         this.groupType = groupType;
@@ -27,6 +27,7 @@ public class PermissionInfo {
      * Gets the list of groups this group/player inherits permissions from.
      * @return The list of groups.
      */
+    @SuppressWarnings("unused")
     public List<Group> getGroups() {
         return node.getStringList(groupType)
                    .stream()
@@ -39,14 +40,16 @@ public class PermissionInfo {
      * Gets a map of non-world-specific permission nodes to boolean values that this group/player defines.
      * @return The map of permissions.
      */
+    @SuppressWarnings("unused")
     public Map<String, Boolean> getPermissions() {
-        return manager.getAllPerms(node.getName(), node.getName());
+        return manager.getAllPerms(node.getName(), node.getCurrentPath());
     }
     
     /**
      * Gets a list of worlds this group/player defines world-specific permissions for.
      * @return The list of worlds.
      */
+    @SuppressWarnings("unused")
     public Set<String> getWorlds() {
         if (node.getConfigurationSection("worlds") == null) {
             return ImmutableSet.of();
@@ -59,6 +62,7 @@ public class PermissionInfo {
      * @param world The name of the world.
      * @return The map of permissions.
      */
+    @SuppressWarnings("unused")
     public Map<String, Boolean> getWorldPermissions(final String world) {
         return manager.getAllPerms(node.getName() + ":" + world, node.getName() + "/world/" + world);
     }

@@ -10,10 +10,10 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class PermissionManager {
+final public class PermissionManager {
 
     final Permissions plugin;
-    final Map<String, PermissionAttachment> permissions;
+    final Map<UUID, PermissionAttachment> permissions;
 
     public PermissionManager(final Permissions plugin) {
         this.plugin = plugin;
@@ -23,41 +23,51 @@ public class PermissionManager {
     // -- External API
     /**
      * Get the group with the given name.
-     * @param groupName The name of the group.                                       Set
+     *
+     * @param groupName The name of the group.
      * @return A Group if it exists or null otherwise.
      */
-    public Group getGroup(final String groupName) {
+    public Group getGroup(String groupName) {
         if (getNode("groups") != null) {
             for (String key : getNode("groups").getKeys(false)) {
                 if (key.equalsIgnoreCase(groupName)) {
-                    return new Group(plugin.getManager(), key);
+                    return new Group(this, key);
                 }
             }
         }
         return null;
     }
 
+
     /**
      * Returns a list of groups a player is in.
+     *
      * @param playerName The name of the player.
      * @return The groups this player is in. May be empty.
+     * @deprecated Use UUIDs instead.
      */
-    public Collection<Group> getGroups(final String playerName) {
-        ConfigurationSection node = getNode("users/" + playerName);
-        if (node == null) {
-            return ImmutableList.of(new Group(plugin.getManager(), "default"));
+    @Deprecated
+    @SuppressWarnings("unused")
+    public List<Group> getGroups(String playerName) {
+        List<Group> result = new ArrayList<>();
+        ConfigurationSection node = getUsernameNode(playerName);
+        if (node != null) {
+            for (String key : node.getStringList("groups")) {
+                result.add(new Group(this, key));
+            }
+        } else {
+            result.add(new Group(this, "default"));
         }
-        return node.getStringList("groups")
-                   .stream()
-                   .map(k -> new Group(plugin.getManager(), k))
-                   .collect(Collectors.toList());
+        return result;
     }
 
     /**
      * Returns permission info on the given player.
+     *
      * @param playerName The name of the player.
      * @return A PermissionsInfo about this player.
      */
+    @SuppressWarnings("unused")
     public PermissionInfo getPlayerInfo(final String playerName) {
         if (getNode("users/" + playerName) == null) {
             return null;
@@ -70,6 +80,7 @@ public class PermissionManager {
      * Returns a list of all defined groups.
      * @return The list of groups.
      */
+    @SuppressWarnings("unused")
     public Collection<Group> getAllGroups() {
         ConfigurationSection node = getNode("groups");
         if (node == null) {
@@ -82,28 +93,28 @@ public class PermissionManager {
     }
 
     protected void registerPlayer(final Player player) {
-        if (permissions.containsKey(player.getName())) {
+        if (permissions.containsKey(player.getUniqueId())) {
             unregisterPlayer(player);
         }
         PermissionAttachment attachment = player.addAttachment(plugin);
-        permissions.put(player.getName(), attachment);
+        permissions.put(player.getUniqueId(), attachment);
         calculateAttachment(player);
     }
 
     protected void unregisterPlayer(final Player player) {
-        if (permissions.containsKey(player.getName())) {
+        if (permissions.containsKey(player.getUniqueId())) {
             try {
-                player.removeAttachment(permissions.get(player.getName()));
+                player.removeAttachment(permissions.get(player.getUniqueId()));
             } catch (IllegalArgumentException ignore) {
             }
-            permissions.remove(player.getName());
+            permissions.remove(player.getUniqueId());
         }
     }
 
-    protected void refreshForPlayer(String player) {
+    protected void refreshForPlayer(UUID uuid) {
         plugin.saveConfig();
 
-        Player onlinePlayer = Bukkit.getServer().getPlayerExact(player);
+        Player onlinePlayer = Bukkit.getServer().getPlayer(uuid);
         if (onlinePlayer != null) {
             calculateAttachment(onlinePlayer);
         }
@@ -128,17 +139,18 @@ public class PermissionManager {
         // build the set of groups which are children of "group"
         // e.g. if Bob is only a member of "expert" which inherits "user", he
         // must be updated if the permissions of "user" change
-        HashSet<String> childGroups = new HashSet<>();
+        Set<String> childGroups = new HashSet<>();
         fillChildGroups(childGroups, group);
 
-        for (String player : permissions.keySet()) {
-            ConfigurationSection node = getNode("users/" + player);
+        for (UUID uuid : permissions.keySet()) {
+            Player player = Bukkit.getServer().getPlayer(uuid);
+            ConfigurationSection node = getUserNode(player);
 
             // if the player isn't in the config, act like they're in default
             List<String> groupList = (node != null) ? node.getStringList("groups") : Arrays.asList("default");
             for (String userGroup : groupList) {
                 if (childGroups.contains(userGroup)) {
-                    calculateAttachment(Bukkit.getServer().getPlayerExact(player));
+                    calculateAttachment(player);
                     break;
                 }
             }
@@ -146,7 +158,9 @@ public class PermissionManager {
     }
 
     protected void refreshPermissions() {
-        permissions.keySet().stream().map(p -> Bukkit.getServer().getPlayerExact(p)).forEach(this::calculateAttachment);
+        for (UUID player : permissions.keySet()) {
+            calculateAttachment(Bukkit.getServer().getPlayer(player));
+        }
     }
 
     protected ConfigurationSection getNode(String node) {
@@ -158,7 +172,45 @@ public class PermissionManager {
         return null;
     }
 
-    protected void createNode(final String node) {
+    protected ConfigurationSection getUserNode(Player player) {
+        ConfigurationSection sec = getNode("users/" + player.getUniqueId());
+        if (sec == null) {
+            sec = getNode("users/" + player.getName());
+            if (sec != null) {
+                plugin.getConfig().set(sec.getCurrentPath(), null);
+                plugin.getConfig().set("users/" + player.getUniqueId(), sec);
+                sec.set("name", player.getName());
+                plugin.saveConfig();
+            }
+        }
+
+        // make sure name field matches
+        if (sec != null) {
+            if (!player.getName().equals(sec.getString("name"))) {
+                sec.set("name", player.getName());
+                plugin.saveConfig();
+            }
+        }
+
+        return sec;
+    }
+
+    protected ConfigurationSection getUsernameNode(String name) {
+        // try to look up node based on username rather than UUID
+        ConfigurationSection sec = getNode("users");
+        if (sec != null) {
+            for (String child : sec.getKeys(false)) {
+                ConfigurationSection node = sec.getConfigurationSection(child);
+                if (node != null && (name.equals(node.getString("name")) || name.equals("child"))) {
+                    // either the "name" field matches or the key matches
+                    return node;
+                }
+            }
+        }
+        return null;
+    }
+
+    protected ConfigurationSection createNode(final String node) {
         ConfigurationSection sec = plugin.getConfig();
         for (String piece : node.split("/")) {
             ConfigurationSection sec2 = getNode(sec == plugin.getConfig() ? piece : sec.getCurrentPath() + "/" + piece);
@@ -167,6 +219,7 @@ public class PermissionManager {
             }
             sec = sec2;
         }
+        return sec;
     }
 
     protected Map<String, Boolean> getAllPerms(String desc, String path) {
@@ -217,17 +270,16 @@ public class PermissionManager {
         return result;
     }
 
-
     protected void calculateAttachment(Player player) {
         if (player == null) {
             return;
         }
-        PermissionAttachment attachment = permissions.get(player.getName());
+        PermissionAttachment attachment = permissions.get(player.getUniqueId());
         if (attachment == null) {
             return;
         }
 
-        Map<String, Boolean> values = calculatePlayerPermissions(player.getName().toLowerCase(), player.getWorld().getName());
+        Map<String, Boolean> values = calculatePlayerPermissions(player, player.getWorld().getName());
 
         // Fill the attachment reflectively so we don't recalculate for each permission
         // it turns out there's a lot of permissions!
@@ -267,30 +319,31 @@ public class PermissionManager {
         }
     }
 
-    Map<String, Boolean> calculatePlayerPermissions(String player, String world) {
-        String playerNode = "users/" + player;
+    Map<String, Boolean> calculatePlayerPermissions(Player player, String world) {
+        ConfigurationSection node = getUserNode(player);
 
         // if the player isn't in the config, act like they're in default
-        if (getNode(playerNode) == null) {
+        if (node == null) {
             return calculateGroupPermissions("default", world);
         }
 
+        String nodePath = node.getCurrentPath();
         Map<String, Boolean> perms = new LinkedHashMap<>();
 
         // first, apply the player's groups (getStringList returns an empty list if not found)
         // later groups override earlier groups
-        for (String group : getNode(playerNode).getStringList("groups")) {
+        for (String group : node.getStringList("groups")) {
             putAll(perms, calculateGroupPermissions(group, world));
         }
 
         // now apply user-specific permissions
-        if (getNode(playerNode + "/permissions") != null) {
-            putAll(perms, getAllPerms("user " + player, playerNode + "/permissions"));
+        if (getNode(nodePath + "/permissions") != null) {
+            putAll(perms, getAllPerms("user " + player, nodePath + "/permissions"));
         }
 
         // now apply world- and user-specific permissions
-        if (getNode(playerNode + "/worlds/" + world) != null) {
-            putAll(perms, getAllPerms("user " + player + " world " + world, playerNode + "/worlds/" + world));
+        if (getNode(nodePath + "/worlds/" + world) != null) {
+            putAll(perms, getAllPerms("user " + player + " world " + world, nodePath + "/worlds/" + world));
         }
 
         return perms;

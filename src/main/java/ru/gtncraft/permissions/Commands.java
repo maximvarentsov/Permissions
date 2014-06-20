@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 /**
  * CommandExecutor for /permissions
  */
-class Commands implements CommandExecutor, TabCompleter {
+final class Commands implements CommandExecutor, TabCompleter {
     
     final Permissions plugin;
 
@@ -211,7 +211,10 @@ class Commands implements CommandExecutor, TabCompleter {
                 if (split.length != 3) return usage(sender, command, subCommand);
 
                 // This is essentially player setgroup with an added check
-                String player = split[1].toLowerCase();
+                UUID player = resolvePlayer(sender, split[1]);
+                if (player == null) {
+                    return true;
+                }
                 String group = split[2];
 
                 if (!sender.hasPermission("permissions.setrank." + group)) {
@@ -219,11 +222,7 @@ class Commands implements CommandExecutor, TabCompleter {
                     return true;
                 }
 
-                if (plugin.getManager().getNode("users/" + player) == null) {
-                    createPlayerNode(player);
-                }
-
-                plugin.getManager().getNode("users/" + player).set("groups", Arrays.asList(group));
+                plugin.getManager().createNode("users/" + player).set("groups", Arrays.asList(group));
                 plugin.getManager().refreshForPlayer(player);
 
                 sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.GREEN + " is now in " + ChatColor.WHITE + group + ChatColor.GREEN + ".");
@@ -313,11 +312,8 @@ class Commands implements CommandExecutor, TabCompleter {
                     perm = perm.substring(perm.indexOf(':') + 1);
                     node = "worlds/" + world;
                 }
-                if (plugin.getManager().getNode("groups/" + group + "/" + node) == null) {
-                    createGroupNode(group, node);
-                }
 
-                plugin.getManager().getNode("groups/" + group + "/" + node).set(perm, value);
+                plugin.getManager().createNode("groups/" + group + "/" + node).set(perm, value);
                 plugin.getManager().refreshForGroup(group);
 
                 sender.sendMessage(ChatColor.GREEN + "Group " + ChatColor.WHITE + group + ChatColor.GREEN + " now has " + ChatColor.WHITE + perm + ChatColor.GREEN + " = " + ChatColor.WHITE + value + ChatColor.GREEN + ".");
@@ -344,11 +340,8 @@ class Commands implements CommandExecutor, TabCompleter {
                     perm = perm.substring(perm.indexOf(':') + 1);
                     node = "worlds/" + world;
                 }
-                if (plugin.getManager().getNode("groups/" + group + "/" + node) == null) {
-                    createGroupNode(group, node);
-                }
 
-                ConfigurationSection sec = plugin.getManager().getNode("groups/" + group + "/" + node);
+                ConfigurationSection sec = plugin.getManager().createNode("groups/" + group + "/" + node);
                 if (!sec.contains(perm)) {
                     sender.sendMessage(ChatColor.GREEN + "Group " + ChatColor.WHITE + group + ChatColor.GREEN + " did not have " + ChatColor.WHITE + perm + ChatColor.GREEN + " set.");
                     return true;
@@ -369,9 +362,16 @@ class Commands implements CommandExecutor, TabCompleter {
 
         switch (subcommand) {
             case "groups": {
-                if (!checkPerm(sender, "player.groups")) return true;
-                if (split.length != 3) return usage(sender, command, "player groups");
-                String player = split[2].toLowerCase();
+                if (!checkPerm(sender, "player.groups")) {
+                    return true;
+                }
+                if (split.length != 3) {
+                    return usage(sender, command, "player groups");
+                }
+                UUID player = resolvePlayer(sender, split[2]);
+                if (player == null) {
+                    return true;
+                }
 
                 if (plugin.getManager().getNode("users/" + player) == null) {
                     sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.RED + " is in the default group.");
@@ -395,30 +395,33 @@ class Commands implements CommandExecutor, TabCompleter {
                 if (split.length != 4) {
                     return usage(sender, command, "player setgroup");
                 }
-                String player = split[2].toLowerCase();
+                UUID player = resolvePlayer(sender, split[2]);
+                if (player == null) {
+                    return true;
+                }
                 String[] groups = split[3].split(",");
 
-                if (plugin.getManager().getNode("users/" + player) == null) {
-                    createPlayerNode(player);
-                }
-
-                plugin.getManager().getNode("users/" + player).set("groups", Arrays.asList(groups));
+                plugin.getManager().createNode("users/" + player).set("groups", Arrays.asList(groups));
                 plugin.getManager().refreshForPlayer(player);
 
                 sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.GREEN + " is now in " + ChatColor.WHITE + split[3] + ChatColor.GREEN + ".");
                 return true;
             }
             case "addgroup": {
-                if (!checkPerm(sender, "player.addgroup")) return true;
-                if (split.length != 4) return usage(sender, command, "player addgroup");
-                String player = split[2].toLowerCase();
+                if (!checkPerm(sender, "player.addgroup")) {
+                    return true;
+                }
+                if (split.length != 4) {
+                    return usage(sender, command, "player addgroup");
+                }
+                UUID player = resolvePlayer(sender, split[2]);
+                if (player == null) {
+                    return true;
+                }
                 String group = split[3];
 
-                if (plugin.getManager().getNode("users/" + player) == null) {
-                    createPlayerNode(player);
-                }
+                List<String> list = plugin.getManager().createNode("users/" + player).getStringList("groups");
 
-                List<String> list = plugin.getManager().getNode("users/" + player).getStringList("groups");
                 if (list.contains(group)) {
                     sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.GREEN + " was already in " + ChatColor.WHITE + group + ChatColor.GREEN + ".");
                     return true;
@@ -432,16 +435,19 @@ class Commands implements CommandExecutor, TabCompleter {
                 return true;
             }
             case "removegroup": {
-                if (!checkPerm(sender, "player.removegroup")) return true;
-                if (split.length != 4) return usage(sender, command, "player removegroup");
-                String player = split[2].toLowerCase();
+                if (!checkPerm(sender, "player.removegroup")) {
+                    return true;
+                }
+                if (split.length != 4) {
+                    return usage(sender, command, "player removegroup");
+                }
+                UUID player = resolvePlayer(sender, split[2]);
+                if (player == null) {
+                    return true;
+                }
                 String group = split[3];
 
-                if (plugin.getManager().getNode("users/" + player) == null) {
-                    createPlayerNode(player);
-                }
-
-                List<String> list = plugin.getManager().getNode("users/" + player).getStringList("groups");
+                List<String> list = plugin.getManager().createNode("users/" + player).getStringList("groups");
                 if (!list.contains(group)) {
                     sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.GREEN + " was not in " + ChatColor.WHITE + group + ChatColor.GREEN + ".");
                     return true;
@@ -455,53 +461,56 @@ class Commands implements CommandExecutor, TabCompleter {
                 return true;
             }
             case "setperm": {
-                if (!checkPerm(sender, "player.setperm")) return true;
-                if (split.length != 4 && split.length != 5) return usage(sender, command, "player setperm");
-                String player = split[2].toLowerCase();
+                if (!checkPerm(sender, "player.setperm")) {
+                    return true;
+                }
+                if (split.length != 4 && split.length != 5) {
+                    return usage(sender, command, "player setperm");
+                }
+                UUID player = resolvePlayer(sender, split[2]);
+                if (player == null) {
+                    return true;
+                }
                 String perm = split[3];
                 boolean value = (split.length != 5) || Boolean.parseBoolean(split[4]);
 
                 String node = "permissions";
-                if (plugin.getManager().getNode("users/" + player) == null) {
-                    createPlayerNode(player);
-                }
 
                 if (perm.contains(":")) {
                     String world = perm.substring(0, perm.indexOf(':'));
                     perm = perm.substring(perm.indexOf(':') + 1);
                     node = "worlds/" + world;
                 }
-                if (plugin.getManager().getNode("users/" + player + "/" + node) == null) {
-                    createPlayerNode(player, node);
-                }
 
-                plugin.getManager().getNode("users/" + player + "/" + node).set(perm, value);
+                plugin.getManager().createNode("users/" + player + "/" + node).set(perm, value);
                 plugin.getManager().refreshForPlayer(player);
 
                 sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.GREEN + " now has " + ChatColor.WHITE + perm + ChatColor.GREEN + " = " + ChatColor.WHITE + value + ChatColor.GREEN + ".");
                 return true;
             }
             case "unsetperm": {
-                if (!checkPerm(sender, "player.unsetperm")) return true;
-                if (split.length != 4) return usage(sender, command, "player unsetperm");
-                String player = split[2].toLowerCase();
+                if (!checkPerm(sender, "player.unsetperm")) {
+                    return true;
+                }
+                if (split.length != 4) {
+                    return usage(sender, command, "player unsetperm");
+                }
+                UUID player = resolvePlayer(sender, split[2]);
+                if (player == null) {
+                    return true;
+                }
                 String perm = split[3];
 
                 String node = "permissions";
-                if (plugin.getManager().getNode("users/" + player) == null) {
-                    createPlayerNode(player);
-                }
 
                 if (perm.contains(":")) {
                     String world = perm.substring(0, perm.indexOf(':'));
                     perm = perm.substring(perm.indexOf(':') + 1);
                     node = "worlds/" + world;
                 }
-                if (plugin.getManager().getNode("users/" + player + "/" + node) == null) {
-                    createPlayerNode(player, node);
-                }
 
-                ConfigurationSection sec = plugin.getManager().getNode("users/" + player + "/" + node);
+                ConfigurationSection sec = plugin.getManager().createNode("users/" + player + "/" + node);
+
                 if (!sec.contains(perm)) {
                     sender.sendMessage(ChatColor.GREEN + "Player " + ChatColor.WHITE + player + ChatColor.GREEN + " did not have " + ChatColor.WHITE + perm + ChatColor.GREEN + " set.");
                     return true;
@@ -517,17 +526,32 @@ class Commands implements CommandExecutor, TabCompleter {
         }
     }
 
-    void createPlayerNode(String player) {
-        plugin.getManager().createNode("users/" + player);
-        plugin.getManager().getNode("users/" + player).set("groups", Arrays.asList("default"));
-    }
+    UUID resolvePlayer(CommandSender sender, String arg) {
+        arg = arg.toLowerCase();
+        // see if it resolves to a single player name
+        List<Player> players = plugin.getServer().matchPlayer(arg);
+        if (players.size() == 1) {
+            return players.get(0).getUniqueId();
+        } else if (players.size() > 1) {
+            sender.sendMessage(ChatColor.RED + "Username " + ChatColor.WHITE + arg + ChatColor.RED + " is ambiguous.");
+            return null;
+        }
 
-    void createPlayerNode(String player, String subnode) {
-        plugin.getManager().createNode("users/" + player + "/" + subnode);
-    }
-
-    void createGroupNode(String group, String subnode) {
-        plugin.getManager().createNode("groups/" + group + "/" + subnode);
+        if (arg.length() == 32) {
+            // expand UUIDs which do not have dashes in them
+            arg = arg.substring(0, 8) + "-" + arg.substring(8, 12) + "-" + arg.substring(12, 16) +
+                  "-" + arg.substring(16, 20) + "-" + arg.substring(20, 32);
+        }
+        if (arg.length() == 36) {
+            // is of correct UUID length
+            try {
+                return UUID.fromString(arg);
+            } catch (IllegalArgumentException ignore) {
+            }
+        }
+        sender.sendMessage(ChatColor.RED + "Could not resolve player: " + ChatColor.WHITE + arg);
+        sender.sendMessage(ChatColor.RED + "You must provide a UUID or the name of an online player.");
+        return null;
     }
     
     // -- utilities --
