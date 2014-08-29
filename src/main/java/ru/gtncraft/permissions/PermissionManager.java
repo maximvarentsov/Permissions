@@ -28,8 +28,9 @@ final public class PermissionManager {
      * @return A Group if it exists or null otherwise.
      */
     public Group getGroup(String groupName) {
-        if (getNode("groups") != null) {
-            for (String key : getNode("groups").getKeys(false)) {
+        ConfigurationSection groups = getNode("groups");
+        if (groups != null) {
+            for (String key : groups.getKeys(false)) {
                 if (key.equalsIgnoreCase(groupName)) {
                     return new Group(this, key);
                 }
@@ -110,9 +111,8 @@ final public class PermissionManager {
         }
     }
 
-    protected void refreshForPlayer(UUID uuid) {
+    public void refreshForPlayer(final UUID uuid) {
         plugin.saveConfig();
-
         Player onlinePlayer = Bukkit.getServer().getPlayer(uuid);
         if (onlinePlayer != null) {
             calculateAttachment(onlinePlayer);
@@ -134,7 +134,7 @@ final public class PermissionManager {
         }
     }
 
-    protected void refreshForGroup(String group) {
+    public void refreshForGroup(String group) {
         plugin.saveConfig();
 
         // build the set of groups which are children of "group"
@@ -158,7 +158,7 @@ final public class PermissionManager {
         }
     }
 
-    protected void refreshPermissions() {
+    public void refreshPermissions() {
         for (UUID player : permissions.keySet()) {
             calculateAttachment(Bukkit.getServer().getPlayer(player));
         }
@@ -211,7 +211,7 @@ final public class PermissionManager {
         return null;
     }
 
-    protected ConfigurationSection createNode(final String node) {
+    public ConfigurationSection createNode(final String node) {
         ConfigurationSection sec = plugin.getConfig();
         for (String piece : node.split("/")) {
             ConfigurationSection sec2 = getNode(sec == plugin.getConfig() ? piece : sec.getCurrentPath() + "/" + piece);

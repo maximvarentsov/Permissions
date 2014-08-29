@@ -6,6 +6,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.FileUtil;
+import ru.gtncraft.permissions.commands.Reload;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -19,9 +20,9 @@ import java.util.regex.Pattern;
 
 final public class Permissions extends JavaPlugin {
 
-    YamlConfiguration config;
-    PermissionManager manager;
-    boolean configLoadError = false;
+    private YamlConfiguration config;
+    private PermissionManager manager;
+    public boolean configLoadError = false;
 
     @Override
     public void onEnable() {
@@ -30,7 +31,7 @@ final public class Permissions extends JavaPlugin {
         reloadConfig();
 
         new Listeners(this);
-        new Commands(this);
+        new Reload(this);
 
         manager = new PermissionManager(this);
         Bukkit.getOnlinePlayers().forEach(getManager()::registerPlayer);
