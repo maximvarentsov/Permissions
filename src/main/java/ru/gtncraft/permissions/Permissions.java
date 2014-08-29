@@ -4,7 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.FileUtil;
 
@@ -20,26 +19,26 @@ import java.util.regex.Pattern;
 
 final public class Permissions extends JavaPlugin {
 
-    File configFile;
     YamlConfiguration config;
     PermissionManager manager;
-
-    public boolean configLoadError = false;
+    boolean configLoadError = false;
 
     @Override
     public void onEnable() {
-        configFile = new File(getDataFolder(), "config.yml");
         saveDefaultConfig();
+
         reloadConfig();
 
-        new Commands(this);
         new Listeners(this);
+        new Commands(this);
 
         manager = new PermissionManager(this);
+        Bukkit.getOnlinePlayers().forEach(getManager()::registerPlayer);
+    }
 
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            getManager().registerPlayer(player);
-        }
+    @Override
+    public void onDisable() {
+        Bukkit.getOnlinePlayers().forEach(getManager()::unregisterPlayer);
     }
 
     @Override
@@ -52,7 +51,7 @@ final public class Permissions extends JavaPlugin {
         config = new YamlConfiguration();
         config.options().pathSeparator('/');
         try {
-            config.load(configFile);
+            config.load(new File(getDataFolder(), "config.yml"));
         } catch (InvalidConfigurationException ex) {
             configLoadError = true;
 
@@ -69,7 +68,7 @@ final public class Permissions extends JavaPlugin {
 
             // make a nice message
             String msg = "Your configuration is invalid! ";
-            if (lines.size() == 0) {
+            if (lines.isEmpty()) {
                 msg += "Unable to find any line numbers.";
             } else {
                 msg += "Take a look at line(s): " + lines.get(0);
@@ -107,19 +106,12 @@ final public class Permissions extends JavaPlugin {
     @Override
     public void saveConfig() {
         // If there's no keys (such as in the event of a load failure) don't save
-        if (config.getKeys(true).size() > 0) {
+        if (config.getKeys(true).isEmpty()) {
             try {
-                config.save(configFile);
+                config.save(new File(getDataFolder(), "config.yml"));
             } catch (IOException ex) {
                 getLogger().log(Level.SEVERE, "Failed to save configuration", ex);
             }
-        }
-    }
-
-    @Override
-    public void onDisable() {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            getManager().unregisterPlayer(player);
         }
     }
 
