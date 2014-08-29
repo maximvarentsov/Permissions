@@ -38,19 +38,18 @@ final public class PermissionManager {
         return null;
     }
 
-
     /**
      * Returns a list of groups a player is in.
      *
-     * @param playerName The name of the player.
+     * @param player The name of the player.
      * @return The groups this player is in. May be empty.
      * @deprecated Use UUIDs instead.
      */
     @Deprecated
     @SuppressWarnings("unused")
-    public List<Group> getGroups(String playerName) {
+    public List<Group> getGroups(String player) {
         List<Group> result = new ArrayList<>();
-        ConfigurationSection node = getUsernameNode(playerName);
+        ConfigurationSection node = getUsernameNode(player);
         if (node != null) {
             for (String key : node.getStringList("groups")) {
                 result.add(new Group(this, key));
@@ -64,16 +63,16 @@ final public class PermissionManager {
     /**
      * Returns permission info on the given player.
      *
-     * @param playerName The name of the player.
+     * @param player The name of the player.
      * @return A PermissionsInfo about this player.
      */
     @SuppressWarnings("unused")
-    public PermissionInfo getPlayerInfo(final String playerName) {
-        if (getNode("users/" + playerName) == null) {
-            return null;
-        } else {
-            return new PermissionInfo(plugin.getManager(), getNode("users/" + playerName), "groups");
+    public PermissionInfo getPlayerInfo(String player) {
+        ConfigurationSection node = getNode("users/" + player);
+        if (node != null) {
+            return new PermissionInfo(plugin.getManager(), node, "groups");
         }
+        return null;
     }
 
     /**
@@ -92,7 +91,7 @@ final public class PermissionManager {
                    .collect(Collectors.toList());
     }
 
-    protected void registerPlayer(final Player player) {
+    public void registerPlayer(final Player player) {
         if (permissions.containsKey(player.getUniqueId())) {
             unregisterPlayer(player);
         }
@@ -101,7 +100,7 @@ final public class PermissionManager {
         calculateAttachment(player);
     }
 
-    protected void unregisterPlayer(final Player player) {
+    public void unregisterPlayer(final Player player) {
         if (permissions.containsKey(player.getUniqueId())) {
             try {
                 player.removeAttachment(permissions.get(player.getUniqueId()));
@@ -121,7 +120,9 @@ final public class PermissionManager {
     }
 
     void fillChildGroups(Set<String> childGroups, String group) {
-        if (childGroups.contains(group)) return;
+        if (childGroups.contains(group)) {
+            return;
+        }
         childGroups.add(group);
 
         for (String key : getNode("groups").getKeys(false)) {
@@ -270,7 +271,7 @@ final public class PermissionManager {
         return result;
     }
 
-    protected void calculateAttachment(Player player) {
+    protected void calculateAttachment(final Player player) {
         if (player == null) {
             return;
         }

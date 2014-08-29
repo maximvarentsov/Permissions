@@ -17,9 +17,6 @@ import java.io.PrintStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * CommandExecutor for /permissions
- */
 final class Commands implements CommandExecutor, TabCompleter {
     
     final Permissions plugin;

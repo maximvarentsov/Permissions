@@ -98,7 +98,7 @@ public final class Group {
 
     @Override
     public boolean equals(Object o) {
-        return !(o == null || !(o instanceof Group)) && name.equalsIgnoreCase(((Group) o).getName());
+        return o instanceof Group && name.equalsIgnoreCase(((Group) o).getName());
     }
 
     @Override
