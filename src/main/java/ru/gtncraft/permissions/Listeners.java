@@ -11,20 +11,16 @@ import org.bukkit.event.player.PlayerQuitEvent;
 final class Listeners implements Listener {
 
     private final PermissionManager manager;
-    private final boolean registerOnJoin;
 
     public Listeners(final Permissions plugin) {
         Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
         manager = plugin.getManager();
-        registerOnJoin = plugin.getConfig().getBoolean("registerOnJoin", true);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     @SuppressWarnings("unused")
     void onPlayerLogin(final PlayerJoinEvent event) {
-        if (registerOnJoin) {
-            manager.registerPlayer(event.getPlayer());
-        }
+        manager.registerPlayer(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)

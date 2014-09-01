@@ -17,9 +17,6 @@ final public class PermissionManager {
 
     public PermissionManager(final Permissions plugin) {
         this.plugin = plugin;
-        if (plugin.getConfig().getBoolean("registerOnJoin", true)) {
-            Bukkit.getOnlinePlayers().forEach(this::registerPlayer);
-        }
     }
 
     // -- External API

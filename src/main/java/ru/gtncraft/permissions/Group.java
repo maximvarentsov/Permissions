@@ -21,7 +21,6 @@ public final class Group {
     }
 
     public String getName() {
-
         return name;
     }
 

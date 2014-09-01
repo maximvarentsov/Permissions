@@ -1,4 +1,3 @@
-registerOnJoin: true
 users:
     ConspiracyWizard:
         permissions:
