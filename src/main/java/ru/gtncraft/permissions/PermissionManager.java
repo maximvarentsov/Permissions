@@ -12,12 +12,14 @@ import java.util.stream.Collectors;
 
 final public class PermissionManager {
 
-    final Permissions plugin;
-    final Map<UUID, PermissionAttachment> permissions;
+    private final Permissions plugin;
+    private final Map<UUID, PermissionAttachment> permissions = new HashMap<>();
 
     public PermissionManager(final Permissions plugin) {
         this.plugin = plugin;
-        this.permissions = new HashMap<>();
+        if (plugin.getConfig().getBoolean("registerOnJoin", true)) {
+            Bukkit.getOnlinePlayers().forEach(this::registerPlayer);
+        }
     }
 
     // -- External API
@@ -51,12 +53,12 @@ final public class PermissionManager {
     public List<Group> getGroups(String player) {
         List<Group> result = new ArrayList<>();
         ConfigurationSection node = getUsernameNode(player);
-        if (node != null) {
+        if (node == null) {
+            result.add(new Group(this, "default"));
+        } else {
             for (String key : node.getStringList("groups")) {
                 result.add(new Group(this, key));
             }
-        } else {
-            result.add(new Group(this, "default"));
         }
         return result;
     }
@@ -75,7 +77,6 @@ final public class PermissionManager {
         }
         return null;
     }
-
     /**
      * Returns a list of all defined groups.
      * @return The list of groups.

@@ -27,14 +27,10 @@ final public class Permissions extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
-
         reloadConfig();
-
+        manager = new PermissionManager(this);
         new Listeners(this);
         new Reload(this);
-
-        manager = new PermissionManager(this);
-        Bukkit.getOnlinePlayers().forEach(getManager()::registerPlayer);
     }
 
     @Override

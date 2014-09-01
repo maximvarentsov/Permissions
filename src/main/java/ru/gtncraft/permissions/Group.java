@@ -1,10 +1,9 @@
 package ru.gtncraft.permissions;
 
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,15 +12,16 @@ import java.util.UUID;
  */
 public final class Group {
 
-    final PermissionManager manager;
-    final String name;
+    private final PermissionManager manager;
+    private final String name;
 
-    Group(final PermissionManager manager, final String name) {
+    Group(PermissionManager manager, String name) {
         this.manager = manager;
         this.name = name;
     }
 
     public String getName() {
+
         return name;
     }
 
@@ -29,70 +29,63 @@ public final class Group {
      * @deprecated Use UUIDs instead.
      */
     @Deprecated
-    @SuppressWarnings("unused")
     public List<String> getPlayers() {
+        ConfigurationSection users = manager.getNode("users");
+        if (users == null) {
+            return Collections.emptyList();
+        }
         List<String> result = new ArrayList<>();
-        if (manager.getNode("users") != null) {
-            for (String user : manager.getNode("users").getKeys(false)) {
-                ConfigurationSection node = manager.getNode("users/" + user);
-                for (String group : node.getStringList("groups")) {
-                    if (name.equalsIgnoreCase(group) && !result.contains(user)) {
-                        // attempt to determine the username
-                        if (node.getString("name") != null) {
-                            // converted node
-                            result.add(node.getString("name"));
-                        } else {
-                            // unconverted node, or UUID node missing "name" element
-                            result.add(user);
-                        }
-                        break;
+        for (String user : users.getKeys(false)) {
+            ConfigurationSection node = manager.getNode("users/" + user);
+            for (String group : node.getStringList("groups")) {
+                if (name.equalsIgnoreCase(group) && !result.contains(user)) {
+                    // attempt to determine the username
+                    if (node.getString("name") != null) {
+                        // converted node
+                        result.add(node.getString("name"));
+                    } else {
+                        // unconverted node, or UUID node missing "name" element
+                        result.add(user);
                     }
+                    break;
                 }
             }
         }
         return result;
     }
 
-    @SuppressWarnings("unused")
     public List<UUID> getPlayerUUIDs() {
+        ConfigurationSection users = manager.getNode("users");
+        if (users == null) {
+            return Collections.emptyList();
+        }
         List<UUID> result = new ArrayList<>();
-        if (manager.getNode("users") != null) {
-            for (String user : manager.getNode("users").getKeys(false)) {
-                UUID uuid;
-                try {
-                    uuid = UUID.fromString(user);
-                } catch (IllegalArgumentException ex) {
-                    continue;
-                }
-                for (String group : manager.getNode("users/" + user).getStringList("groups")) {
-                    if (name.equalsIgnoreCase(group) && !result.contains(uuid)) {
-                        result.add(uuid);
-                        break;
-                    }
+        for (String user : users.getKeys(false)) {
+            UUID uuid;
+            try {
+                uuid = UUID.fromString(user);
+            } catch (IllegalArgumentException ex) {
+                continue;
+            }
+            for (String group : manager.getNode("users/" + user).getStringList("groups")) {
+                if (name.equalsIgnoreCase(group) && !result.contains(uuid)) {
+                    result.add(uuid);
+                    break;
                 }
             }
         }
         return result;
     }
 
-    @SuppressWarnings("unused")
-    public List<Player> getOnlinePlayers() {
-        List<Player> result = new ArrayList<>();
-        for (UUID uuid : getPlayerUUIDs()) {
-            Player player = Bukkit.getServer().getPlayer(uuid);
-            if (player != null && player.isOnline()) {
-                result.add(player);
-            }
-        }
-        return result;
-    }
-
-    @SuppressWarnings("unused")
     public PermissionInfo getInfo() {
         ConfigurationSection node = manager.getNode("groups/" + name);
         if (node != null) {
             return new PermissionInfo(manager, node, "inheritance");
         }
+        return null;
+    }
+
+    public String getPrefix() {
         return null;
     }
 

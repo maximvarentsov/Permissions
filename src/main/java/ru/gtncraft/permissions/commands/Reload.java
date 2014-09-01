@@ -15,8 +15,8 @@ import java.util.List;
 
 final public class Reload implements CommandExecutor, TabCompleter {
     
-    final Permissions plugin;
-    final List<String> ROOT_SUBS = ImmutableList.of("reload");
+    private final Permissions plugin;
+    private final List<String> ROOT_SUBS = ImmutableList.of("reload");
 
     public Reload(final Permissions plugin) {
         plugin.getCommand("permissions").setExecutor(this);

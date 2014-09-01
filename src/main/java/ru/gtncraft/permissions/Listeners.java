@@ -8,28 +8,23 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-/**
- * Listen for player-based events to keep track of players and build permissions.
- */
 final class Listeners implements Listener {
 
-    final PermissionManager manager;
+    private final PermissionManager manager;
+    private final boolean registerOnJoin;
 
     public Listeners(final Permissions plugin) {
         Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
         manager = plugin.getManager();
-    }
-    
-    @EventHandler(priority = EventPriority.HIGHEST)
-    @SuppressWarnings("unused")
-    void onWorldChange(final PlayerChangedWorldEvent event) {
-        manager.calculateAttachment(event.getPlayer());
+        registerOnJoin = plugin.getConfig().getBoolean("registerOnJoin", true);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     @SuppressWarnings("unused")
     void onPlayerLogin(final PlayerJoinEvent event) {
-        manager.registerPlayer(event.getPlayer());
+        if (registerOnJoin) {
+            manager.registerPlayer(event.getPlayer());
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -37,4 +32,17 @@ final class Listeners implements Listener {
     void onPlayerQuit(final PlayerQuitEvent event) {
         manager.unregisterPlayer(event.getPlayer());
     }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    @SuppressWarnings("unused")
+    void onWorldChange(final PlayerChangedWorldEvent event) {
+        manager.calculateAttachment(event.getPlayer());
+    }
+
+    /*@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @SuppressWarnings("unused")
+    void onPlayerChat(final AsyncPlayerChatEvent event) {
+        List<Group> groups = manager.getPlayerInfo(event.getPlayer().getName()).getGroups();
+
+    }*/
 }
