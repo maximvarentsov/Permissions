@@ -1,5 +1,6 @@
+format: "[&6%prefix&r] &3%name&7:&r %message"
 users:
-    ConspiracyWizard:
+    Player:
         permissions:
             permissions.example: true
         groups:
@@ -10,14 +11,6 @@ groups:
             permissions.build: false
     admin:
         permissions:
-            permissions.*: true
-        inheritance:
-        - user
-    user:
-        permissions:
-            permissions.build: true
-        worlds:
-            creative:
-                coolplugin.item: true
+            permissions.reload: true
         inheritance:
         - default

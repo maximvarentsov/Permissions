@@ -7,21 +7,24 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * A class representing a permissions group.
- */
 public final class Group {
 
     private final PermissionManager manager;
     private final String name;
+    private final String prefix;
 
     Group(PermissionManager manager, String name) {
         this.manager = manager;
         this.name = name;
+        this.prefix = manager.getNode("groups/" + name).getString("prefix", name);
     }
 
     public String getName() {
         return name;
+    }
+
+    public String getPrefix() {
+        return prefix;
     }
 
     /**
@@ -81,10 +84,6 @@ public final class Group {
         if (node != null) {
             return new PermissionInfo(manager, node, "inheritance");
         }
-        return null;
-    }
-
-    public String getPrefix() {
         return null;
     }
 
