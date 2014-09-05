@@ -51,7 +51,7 @@ final class Listeners implements Listener {
 
         String message = format.replace("%name", "%1$s");
         message = message.replace("%message", "%2$s");
-        message = message.replace("%prefix",  group.getPrefix());
+        message = message.replace("%prefix",  ChatColor.translateAlternateColorCodes('&',group.getPrefix()));
 
         event.setFormat(message);
     }
