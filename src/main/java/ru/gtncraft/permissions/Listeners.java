@@ -53,6 +53,10 @@ final class Listeners implements Listener {
         message = message.replace("%message", "%2$s");
         message = message.replace("%prefix",  ChatColor.translateAlternateColorCodes('&',group.getPrefix()));
 
+        if (player.hasPermission("permissions.chat.color")) {
+            event.setMessage(ChatColor.translateAlternateColorCodes('&', event.getMessage()));
+        }
+
         event.setFormat(message);
     }
 }

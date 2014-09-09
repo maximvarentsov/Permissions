@@ -12,3 +12,6 @@ permissions:
   permissions.reload:
     description: Allows use of /permissions reload.
     default: op
+  permissions.chat.color:
+    description: Allow sender use color codes in chat.
+    default: op
